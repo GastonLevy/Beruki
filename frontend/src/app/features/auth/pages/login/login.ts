@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Auth } from '../../services/auth';
 
@@ -18,7 +19,10 @@ export class Login {
     password: ['', [Validators.required]]
   });
 
-  constructor(private auth: Auth) {}
+  constructor(
+    private auth: Auth,
+    private router: Router
+  ) {}
 
   onSubmit(): void {
 
@@ -34,7 +38,7 @@ export class Login {
 
         this.auth.setToken(response.token);
 
-        console.log(response);
+        this.router.navigate(['/dashboard']);
 
       },
       error: (error) => {
