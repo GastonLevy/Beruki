@@ -14,4 +14,8 @@ export class Api {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, body);
   }
 
+  get<T>(endpoint: string) {
+    return this.http.get<T>(`${this.baseUrl}${endpoint}`);
+  }
+
 }
