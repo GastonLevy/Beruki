@@ -33,7 +33,7 @@ services:
       - ./frontend:/app
     ports:
       - "4200:4200"
-    command: npx ng serve --host 0.0.0.0
+    command: npx ng serve --host 0.0.0.0 --poll 1000
     tty: true
 
 volumes:
