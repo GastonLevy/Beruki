@@ -30,8 +30,12 @@ export class Login {
     const { username, password } = this.loginForm.getRawValue();
 
     this.auth.login(username!, password!).subscribe({
-      next: (response) => {
+      next: (response: any) => {
+
+        this.auth.setToken(response.token);
+
         console.log(response);
+
       },
       error: (error) => {
         console.error(error);
