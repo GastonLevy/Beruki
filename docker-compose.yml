@@ -1,0 +1,40 @@
+services:
+  database:
+    image: mysql:8.0
+    container_name: beruki_db
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: beruki
+      MYSQL_ROOT_PASSWORD: root
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build: ./docker/php
+    container_name: beruki_backend
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    command: php -S 0.0.0.0:8000 -t public
+    tty: true
+
+  frontend:
+    build: ./docker/node
+    container_name: beruki_frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "4200:4200"
+    command: npx ng serve --host 0.0.0.0
+    tty: true
+
+volumes:
+  db_data:
