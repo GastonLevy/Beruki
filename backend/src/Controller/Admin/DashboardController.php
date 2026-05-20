@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Entity\Customer;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -13,7 +14,7 @@ class DashboardController extends AbstractDashboardController
 {
     public function index(): Response
     {
-        return $this->redirectToRoute('admin_user_index');
+        return $this->redirectToRoute('admin_customer_index');
     }
 
     public function configureDashboard(): Dashboard
@@ -27,8 +28,14 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
 
         yield MenuItem::linkToRoute(
-            'Users',
+            'Customers',
             'fa fa-users',
+            'admin_customer_index'
+        );
+
+        yield MenuItem::linkToRoute(
+            'Users',
+            'fa fa-user-shield',
             'admin_user_index'
         );
     }
