@@ -38,7 +38,7 @@ export class Login {
 
         this.auth.setToken(response.token);
 
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/customers']);
 
       },
       error: (error) => {
