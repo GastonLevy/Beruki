@@ -1,11 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Customer } from '../../services/customer';
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [FormsModule],
+  imports: [
+    FormsModule,
+    RouterLink
+  ],
   templateUrl: './customers.html',
   styleUrl: './customers.scss',
 })

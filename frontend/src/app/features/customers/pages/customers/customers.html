@@ -44,7 +44,10 @@
 
           @for (customer of customers; track customer.id) {
 
-            <tr>
+            <tr
+              role="button"
+              [routerLink]="['/customers', customer.id]"
+            >
 
               <td>
                 {{ customer.subscriberNumber }}
@@ -65,13 +68,17 @@
               <td>
 
                 @if (customer.monthlyDebt) {
+
                   <span class="badge text-bg-danger">
                     Sí
                   </span>
+
                 } @else {
+
                   <span class="badge text-bg-success">
                     No
                   </span>
+
                 }
 
               </td>

@@ -1,1 +1,29 @@
-<p>customer-detail works!</p>
+<div class="container py-4">
+
+  <h1>
+    Cliente detail
+  </h1>
+
+  @if (customer) {
+
+    <p>
+      Nombre: {{ customer.fullName }}
+    </p>
+
+    <p>
+      Abonado: {{ customer.subscriberNumber }}
+    </p>
+
+    <p>
+      Email: {{ customer.email }}
+    </p>
+
+  } @else {
+
+    <p>
+      Cargando cliente...
+    </p>
+
+  }
+
+</div>
