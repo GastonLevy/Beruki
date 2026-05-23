@@ -17,29 +17,41 @@ export class Customers implements OnInit {
 
   constructor(private customerService: Customer) {}
 
-  ngOnInit(): void {
-    this.loadCustomers();
-  }
+  ngOnInit(): void {}
 
   loadCustomers(): void {
+
     this.customerService.getAll(
       1,
       25,
       this.search
     ).subscribe({
       next: (response: any) => {
-        this.customers = response.data;
+
+        this.customers = response.data ?? [];
 
         console.log(response);
+
       },
       error: (error) => {
         console.error(error);
       }
     });
+
   }
 
   onSearch(): void {
+
+    if (this.search.trim().length < 2) {
+
+      this.customers = [];
+
+      return;
+
+    }
+
     this.loadCustomers();
+
   }
 
 }
