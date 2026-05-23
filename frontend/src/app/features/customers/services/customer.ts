@@ -14,4 +14,8 @@ export class Customer {
     );
   }
 
+  getById(id: number) {
+    return this.api.get(`/customers/${id}`);
+  }
+
 }
