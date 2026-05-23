@@ -17,28 +17,26 @@ final class CustomerController extends AbstractController
         CustomerRepository $customerRepository
     ): JsonResponse {
         $page = max(1, $request->query->getInt('page', 1));
-        $limit = max(1, min(100, $request->query->getInt('limit', 10)));
+        $limit = max(1, min(100, $request->query->getInt('limit', 25)));
         $offset = ($page - 1) * $limit;
+        $search = trim($request->query->get('search', ''));
 
-        $customers = $customerRepository->findBy(
-            [],
-            ['id' => 'DESC'],
+        $result = $customerRepository->searchPaginated(
+            $search,
             $limit,
             $offset
         );
 
-        $total = $customerRepository->count([]);
-
         return $this->json([
             'data' => array_map(
                 fn ($customer) => $this->serializeCustomer($customer),
-                $customers
+                $result['data']
             ),
             'pagination' => [
                 'page' => $page,
                 'limit' => $limit,
-                'total' => $total,
-                'pages' => (int) ceil($total / $limit),
+                'total' => $result['total'],
+                'pages' => (int) ceil($result['total'] / $limit),
             ],
         ]);
     }
