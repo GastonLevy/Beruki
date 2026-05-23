@@ -1,0 +1,81 @@
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+
+    <h1 class="mb-0">
+      Clientes
+    </h1>
+
+    <input
+      type="text"
+      class="form-control w-auto"
+      placeholder="Buscar cliente..."
+      [(ngModel)]="search"
+      (input)="onSearch()"
+    >
+
+  </div>
+
+  <div class="table-responsive">
+
+    <table class="table table-hover align-middle">
+
+      <thead>
+
+        <tr>
+          <th>Abonado</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Mensualidad</th>
+          <th>Deuda</th>
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        @for (customer of customers; track customer.id) {
+
+          <tr>
+
+            <td>
+              {{ customer.subscriberNumber }}
+            </td>
+
+            <td>
+              {{ customer.fullName }}
+            </td>
+
+            <td>
+              {{ customer.email }}
+            </td>
+
+            <td>
+              ${{ customer.monthlyAmount }}
+            </td>
+
+            <td>
+
+              @if (customer.monthlyDebt) {
+                <span class="badge text-bg-danger">
+                  Sí
+                </span>
+              } @else {
+                <span class="badge text-bg-success">
+                  No
+                </span>
+              }
+
+            </td>
+
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>

@@ -8,8 +8,10 @@ export class Customer {
 
   constructor(private api: Api) {}
 
-  getAll() {
-    return this.api.get('/customers');
+  getAll(page: number = 1, limit: number = 25, search: string = '') {
+    return this.api.get(
+      `/customers?page=${page}&limit=${limit}&search=${search}`
+    );
   }
 
 }
