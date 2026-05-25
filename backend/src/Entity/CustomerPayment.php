@@ -28,6 +28,9 @@ class CustomerPayment
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $amount = null;
 
+    #[ORM\ManyToOne(inversedBy: 'customerPayments')]
+    private ?CashCut $cashCut = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -77,6 +80,18 @@ class CustomerPayment
     public function setAmount(string $amount): static
     {
         $this->amount = $amount;
+
+        return $this;
+    }
+
+    public function getCashCut(): ?CashCut
+    {
+        return $this->cashCut;
+    }
+
+    public function setCashCut(?CashCut $cashCut): static
+    {
+        $this->cashCut = $cashCut;
 
         return $this;
     }
