@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -30,6 +32,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    /**
+     * @var Collection<int, CashCut>
+     */
+    #[ORM\OneToMany(targetEntity: CashCut::class, mappedBy: 'user')]
+    private Collection $cashCuts;
+
+    public function __construct()
+    {
+        $this->cashCuts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -110,5 +123,35 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function eraseCredentials(): void
     {
         // @deprecated, to be removed when upgrading to Symfony 8
+    }
+
+    /**
+     * @return Collection<int, CashCut>
+     */
+    public function getCashCuts(): Collection
+    {
+        return $this->cashCuts;
+    }
+
+    public function addCashCut(CashCut $cashCut): static
+    {
+        if (!$this->cashCuts->contains($cashCut)) {
+            $this->cashCuts->add($cashCut);
+            $cashCut->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCashCut(CashCut $cashCut): static
+    {
+        if ($this->cashCuts->removeElement($cashCut)) {
+            // set the owning side to null (unless already changed)
+            if ($cashCut->getUser() === $this) {
+                $cashCut->setUser(null);
+            }
+        }
+
+        return $this;
     }
 }
