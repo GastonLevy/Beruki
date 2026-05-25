@@ -18,4 +18,8 @@ export class Customer {
     return this.api.get(`/customers/${id}`);
   }
 
+  payMonthlyFee(id: number) {
+    return this.api.post(`/customers/${id}/payments`, {});
+  }
+
 }
