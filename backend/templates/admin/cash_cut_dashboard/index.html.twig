@@ -1,0 +1,56 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Cortes de caja pendientes
+{% endblock %}
+
+{% block main %}
+
+    <table class="table datagrid">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Recaudado pendiente</th>
+                <th>Cantidad de pagos</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for collection in pendingCollections %}
+                <tr>
+                    <td>
+                        {{ collection.username }}
+                    </td>
+
+                    <td>
+                        ${{ collection.totalAmount }}
+                    </td>
+
+                    <td>
+                        {{ collection.paymentsCount }}
+                    </td>
+
+                    <td class="text-end">
+                        <form
+                            method="post"
+                            action="{{ path('admin_cash_cuts_close', { userId: collection.userId }) }}"
+                            onsubmit="return confirm('¿Confirmar corte de caja para este usuario?');"
+                        >
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Hacer corte
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        No hay recaudaciones pendientes.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
