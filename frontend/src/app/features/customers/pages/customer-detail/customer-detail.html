@@ -1,22 +1,68 @@
 <div class="container py-4">
 
-  <h1>
+  <h1 class="mb-4">
     Cliente detail
   </h1>
 
-  @if (customer) {
+  <a
+    routerLink="/customers"
+    class="btn btn-outline-secondary mb-4"
+  >
+    Volver
+</a>
 
-    <p>
-      Nombre: {{ customer.fullName }}
-    </p>
+  @if (customer$ | async; as customer) {
 
-    <p>
-      Abonado: {{ customer.subscriberNumber }}
-    </p>
+    <div class="card border-0 shadow-sm">
 
-    <p>
-      Email: {{ customer.email }}
-    </p>
+      <div class="card-body">
+
+        <h2 class="h4 mb-4">
+          {{ customer.fullName }}
+        </h2>
+
+        <p>
+          <strong>Abonado:</strong> {{ customer.subscriberNumber }}
+        </p>
+
+        <p>
+          <strong>Email:</strong> {{ customer.email }}
+        </p>
+
+        <p>
+          <strong>Mensualidad:</strong> {{ customer.monthlyAmount }}
+        </p>
+
+        <p>
+          <strong>Estado:</strong>
+
+          @if (customer.monthlyDebt) {
+            <span class="badge text-bg-danger">
+              Debe este mes
+            </span>
+          } @else {
+            <span class="badge text-bg-success">
+              Pagado este mes
+            </span>
+          }
+        </p>
+
+        <button
+          type="button"
+          class="btn btn-success mt-3"
+          [disabled]="!customer.monthlyDebt"
+          (click)="payMonthlyFee()"
+        >
+          @if (customer.monthlyDebt) {
+            Pagar mensualidad
+          } @else {
+            Este mes ya está pagado
+          }
+        </button>
+
+      </div>
+
+    </div>
 
   } @else {
 

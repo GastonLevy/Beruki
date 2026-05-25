@@ -1,33 +1,44 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component } from '@angular/core';
+import { ActivatedRoute, RouterLink} from '@angular/router';
+import { BehaviorSubject, Observable, switchMap } from 'rxjs';
 import { Customer } from '../../services/customer';
 
 @Component({
   selector: 'app-customer-detail',
   standalone: true,
   imports: [
-    CommonModule
+    CommonModule,
+    RouterLink
   ],
   templateUrl: './customer-detail.html',
   styleUrl: './customer-detail.scss',
 })
-export class CustomerDetail implements OnInit {
+export class CustomerDetail {
 
-  customer: any = null;
+  customer$: Observable<any>;
+
+  private refreshCustomer$ = new BehaviorSubject<void>(undefined);
+
+  private customerId: number;
 
   constructor(
     private route: ActivatedRoute,
     private customerService: Customer
-  ) {}
+  ) {
+    this.customerId = Number(this.route.snapshot.paramMap.get('id'));
 
-  ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.customer$ = this.refreshCustomer$.pipe(
+      switchMap(() => {
+        return this.customerService.getById(this.customerId);
+      })
+    );
+  }
 
-    this.customerService.getById(id).subscribe({
-      next: (response: any) => {
-        this.customer = response;
-        console.log(response);
+  payMonthlyFee(): void {
+    this.customerService.payMonthlyFee(this.customerId).subscribe({
+      next: () => {
+        this.refreshCustomer$.next();
       },
       error: (error) => {
         console.error(error);

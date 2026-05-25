@@ -24,86 +24,94 @@
 
   } @else {
 
-    <div class="table-responsive">
+    @if (customers$ | async; as response) {
 
-      <table class="table table-hover align-middle">
+      <div class="table-responsive">
 
-        <thead>
+        <table class="table table-hover align-middle">
 
-          <tr>
-            <th>Abonado</th>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Mensualidad</th>
-            <th>Deuda</th>
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          @for (customer of customers; track customer.id) {
-
-            <tr
-              role="button"
-              [routerLink]="['/customers', customer.id]"
-            >
-
-              <td>
-                {{ customer.subscriberNumber }}
-              </td>
-
-              <td>
-                {{ customer.fullName }}
-              </td>
-
-              <td>
-                {{ customer.email }}
-              </td>
-
-              <td>
-                ${{ customer.monthlyAmount }}
-              </td>
-
-              <td>
-
-                @if (customer.monthlyDebt) {
-
-                  <span class="badge text-bg-danger">
-                    Sí
-                  </span>
-
-                } @else {
-
-                  <span class="badge text-bg-success">
-                    No
-                  </span>
-
-                }
-
-              </td>
-
-            </tr>
-
-          }
-
-          @if (customers.length === 0) {
+          <thead>
 
             <tr>
-
-              <td colspan="5" class="text-center text-muted py-4">
-                No se encontraron clientes.
-              </td>
-
+              <th>Abonado</th>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Mensualidad</th>
+              <th>Deuda</th>
             </tr>
 
-          }
+          </thead>
 
-        </tbody>
+          <tbody>
 
-      </table>
+            @for (customer of response.data; track customer.id) {
 
-    </div>
+              <tr
+                role="button"
+                [routerLink]="['/customers', customer.id]"
+              >
+
+                <td>
+                  {{ customer.subscriberNumber }}
+                </td>
+
+                <td>
+                  {{ customer.fullName }}
+                </td>
+
+                <td>
+                  {{ customer.email }}
+                </td>
+
+                <td>
+                  ${{ customer.monthlyAmount }}
+                </td>
+
+                <td>
+
+                  @if (customer.monthlyDebt) {
+
+                    <span class="badge text-bg-danger">
+                      Sí
+                    </span>
+
+                  } @else {
+
+                    <span class="badge text-bg-success">
+                      No
+                    </span>
+
+                  }
+
+                </td>
+
+              </tr>
+
+            } @empty {
+
+              <tr>
+
+                <td colspan="5" class="text-center text-muted py-4">
+                  No se encontraron clientes.
+                </td>
+
+              </tr>
+
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    } @else {
+
+      <p>
+        Cargando clientes...
+      </p>
+
+    }
 
   }
 
