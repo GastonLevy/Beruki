@@ -2,7 +2,6 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\Customer;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -28,15 +27,21 @@ class DashboardController extends AbstractDashboardController
         yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
 
         yield MenuItem::linkToRoute(
-            'Customers',
+            'Clientes',
             'fa fa-users',
             'admin_customer_index'
         );
 
         yield MenuItem::linkToRoute(
-            'Users',
+            'Usuarios',
             'fa fa-user-shield',
             'admin_user_index'
+        );
+
+        yield MenuItem::linkToRoute(
+            'Cortes de caja',
+            'fa fa-cash-register',
+            'admin_cash_cuts_pending'
         );
     }
 }
