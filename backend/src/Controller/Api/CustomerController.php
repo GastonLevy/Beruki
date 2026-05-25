@@ -2,7 +2,11 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\CustomerPayment;
+use App\Entity\User;
+use App\Repository\CustomerPaymentRepository;
 use App\Repository\CustomerRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,7 +33,7 @@ final class CustomerController extends AbstractController
 
         return $this->json([
             'data' => array_map(
-                fn ($customer) => $this->serializeCustomer($customer),
+                fn($customer) => $this->serializeCustomer($customer),
                 $result['data']
             ),
             'pagination' => [
@@ -55,6 +59,63 @@ final class CustomerController extends AbstractController
         }
 
         return $this->json($this->serializeCustomer($customer));
+    }
+
+    #[Route('/{id}/payments', name: 'api_customers_payments_create', methods: ['POST'])]
+    public function createPayment(
+        int $id,
+        CustomerRepository $customerRepository,
+        CustomerPaymentRepository $customerPaymentRepository,
+        EntityManagerInterface $entityManager
+    ): JsonResponse {
+        $customer = $customerRepository->find($id);
+
+        if (!$customer) {
+            return $this->json([
+                'message' => 'Customer not found',
+            ], 404);
+        }
+
+        $user = $this->getUser();
+
+        if (!$user instanceof User) {
+            return $this->json([
+                'message' => 'User not authenticated',
+            ], 401);
+        }
+
+        if ($customerPaymentRepository->hasPaymentForCurrentMonth($customer->getId())) {
+            return $this->json([
+                'message' => 'Customer already paid this month',
+            ], 409);
+        }
+
+        $amount = $customer->getMonthlyAmount();
+
+        if (!$amount) {
+            return $this->json([
+                'message' => 'Customer monthly amount is not configured',
+            ], 400);
+        }
+
+        $payment = new CustomerPayment();
+        $payment->setCustomer($customer);
+        $payment->setUser($user);
+        $payment->setAmount((string) $amount);
+        $payment->setPaidAt(new \DateTimeImmutable());
+
+        $customer->setMonthlyDebt(false);
+
+        $entityManager->persist($payment);
+        $entityManager->flush();
+
+        return $this->json([
+            'id' => $payment->getId(),
+            'customerId' => $customer->getId(),
+            'userId' => $user->getId(),
+            'amount' => $payment->getAmount(),
+            'paidAt' => $payment->getPaidAt()?->format('Y-m-d H:i:s'),
+        ], 201);
     }
 
     private function serializeCustomer(object $customer): array
