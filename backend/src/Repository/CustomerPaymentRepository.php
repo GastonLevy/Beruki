@@ -34,4 +34,30 @@ class CustomerPaymentRepository extends ServiceEntityRepository
 
         return $payment !== null;
     }
+
+    public function getPendingCollectionByUser(): array
+    {
+        return $this->createQueryBuilder('payment')
+            ->select('user.id AS userId')
+            ->addSelect('user.username AS username')
+            ->addSelect('SUM(payment.amount) AS totalAmount')
+            ->addSelect('COUNT(payment.id) AS paymentsCount')
+            ->join('payment.user', 'user')
+            ->andWhere('payment.cashCut IS NULL')
+            ->groupBy('user.id')
+            ->addGroupBy('user.username')
+            ->orderBy('user.username', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+    }
+
+    public function findPendingPaymentsByUser(int $userId): array
+    {
+        return $this->createQueryBuilder('payment')
+            ->andWhere('payment.user = :userId')
+            ->andWhere('payment.cashCut IS NULL')
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getResult();
+    }
 }
