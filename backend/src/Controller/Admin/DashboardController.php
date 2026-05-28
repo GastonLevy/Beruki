@@ -33,6 +33,18 @@ class DashboardController extends AbstractDashboardController
         );
 
         yield MenuItem::linkToRoute(
+            'Planes',
+            'fa fa-list',
+            'admin_plan_index'
+        );
+
+        yield MenuItem::linkToRoute(
+            'Planes de clientes',
+            'fa fa-user-tag',
+            'admin_customer_plan_index'
+        );
+
+        yield MenuItem::linkToRoute(
             'Usuarios',
             'fa fa-user-shield',
             'admin_user_index'

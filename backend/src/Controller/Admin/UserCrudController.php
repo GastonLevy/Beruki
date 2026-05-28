@@ -5,10 +5,9 @@ namespace App\Controller\Admin;
 use App\Entity\User;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
@@ -24,22 +23,33 @@ class UserCrudController extends AbstractCrudController
         return User::class;
     }
 
+    public function configureCrud(Crud $crud): Crud
+    {
+        return $crud
+            ->setEntityLabelInSingular('Usuario')
+            ->setEntityLabelInPlural('Usuarios')
+            ->setPageTitle(Crud::PAGE_INDEX, 'Usuarios')
+            ->setPageTitle(Crud::PAGE_NEW, 'Crear usuario')
+            ->setPageTitle(Crud::PAGE_EDIT, 'Editar usuario')
+            ->setPageTitle(Crud::PAGE_DETAIL, 'Detalle del usuario');
+    }
+
     public function configureFields(string $pageName): iterable
     {
         return [
             IdField::new('id')
                 ->hideOnForm(),
 
-            TextField::new('username'),
+            TextField::new('username', 'Usuario'),
 
-            ChoiceField::new('roles')
+            ChoiceField::new('roles', 'Roles')
                 ->allowMultipleChoices()
                 ->setChoices([
-                    'User' => 'ROLE_USER',
-                    'Admin' => 'ROLE_ADMIN',
-            ]),
+                    'Usuario' => 'ROLE_USER',
+                    'Administrador' => 'ROLE_ADMIN',
+                ]),
 
-            TextField::new('password')
+            TextField::new('password', 'Contraseña')
                 ->setFormType(PasswordType::class)
                 ->onlyOnForms(),
         ];
