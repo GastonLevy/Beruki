@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\CustomerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -28,6 +30,22 @@ class Customer
 
     #[ORM\Column(nullable: true)]
     private ?bool $monthlyDebt = null;
+
+    /**
+     * @var Collection<int, CustomerPlan>
+     */
+    #[ORM\OneToMany(targetEntity: CustomerPlan::class, mappedBy: 'customer', orphanRemoval: true)]
+    private Collection $customerPlans;
+
+    public function __construct()
+    {
+        $this->customerPlans = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return $this->fullName ?? '';
+    }
 
     public function getId(): ?int
     {
@@ -90,6 +108,35 @@ class Customer
     public function setMonthlyDebt(?bool $monthlyDebt): static
     {
         $this->monthlyDebt = $monthlyDebt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, CustomerPlan>
+     */
+    public function getCustomerPlans(): Collection
+    {
+        return $this->customerPlans;
+    }
+
+    public function addCustomerPlan(CustomerPlan $customerPlan): static
+    {
+        if (!$this->customerPlans->contains($customerPlan)) {
+            $this->customerPlans->add($customerPlan);
+            $customerPlan->setCustomer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCustomerPlan(CustomerPlan $customerPlan): static
+    {
+        if ($this->customerPlans->removeElement($customerPlan)) {
+            if ($customerPlan->getCustomer() === $this) {
+                $customerPlan->setCustomer(null);
+            }
+        }
 
         return $this;
     }
