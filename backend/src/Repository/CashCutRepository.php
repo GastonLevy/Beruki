@@ -16,28 +16,36 @@ class CashCutRepository extends ServiceEntityRepository
         parent::__construct($registry, CashCut::class);
     }
 
-    //    /**
-    //     * @return CashCut[] Returns an array of CashCut objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findHistoryWithFilters(
+        ?string $username = null,
+        ?\DateTimeImmutable $dateFrom = null,
+        ?\DateTimeImmutable $dateTo = null
+    ): array {
+        $queryBuilder = $this->createQueryBuilder('cashCut')
+            ->addSelect('user')
+            ->join('cashCut.user', 'user')
+            ->orderBy('cashCut.closedAt', 'DESC');
 
-    //    public function findOneBySomeField($value): ?CashCut
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($username !== null && trim($username) !== '') {
+            $queryBuilder
+                ->andWhere('LOWER(user.username) LIKE :username')
+                ->setParameter('username', '%' . strtolower(trim($username)) . '%');
+        }
+
+        if ($dateFrom !== null) {
+            $queryBuilder
+                ->andWhere('cashCut.closedAt >= :dateFrom')
+                ->setParameter('dateFrom', $dateFrom);
+        }
+
+        if ($dateTo !== null) {
+            $queryBuilder
+                ->andWhere('cashCut.closedAt <= :dateTo')
+                ->setParameter('dateTo', $dateTo);
+        }
+
+        return $queryBuilder
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -50,6 +50,12 @@ class DashboardController extends AbstractDashboardController
             'admin_cash_cuts_pending'
         );
 
+        yield MenuItem::linkToRoute(
+            'Historial de cortes',
+            'fa fa-clock',
+            'admin_cash_cuts_history'
+        );
+
         yield MenuItem::section('Planes de clientes');
 
         yield MenuItem::linkToRoute(

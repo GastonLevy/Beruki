@@ -1,0 +1,68 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Cortes de caja de {{ user.username }}
+{% endblock %}
+
+{% block main %}
+
+    <div class="mb-4">
+        <a
+            href="{{ ea_url()
+                .setController('App\\\\Controller\\\\Admin\\\\UserCrudController')
+                .setAction('index')
+            }}"
+            class="btn btn-secondary btn-sm"
+        >
+            Volver a usuarios
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                Usuario: {{ user.username }}
+            </h5>
+
+            <p class="mb-0">
+                <strong>Total de cortes:</strong>
+                {{ cashCuts|length }}
+            </p>
+        </div>
+    </div>
+
+    <table class="table datagrid">
+        <thead>
+            <tr>
+                <th>Fecha de corte</th>
+                <th>Total</th>
+                <th>Cantidad de pagos</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for cashCut in cashCuts %}
+                <tr>
+                    <td>
+                        {{ cashCut.closedAt|date('d/m/Y H:i') }}
+                    </td>
+
+                    <td>
+                        ${{ cashCut.totalAmount }}
+                    </td>
+
+                    <td>
+                        {{ cashCut.paymentsCount }}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">
+                        Este usuario todavía no tiene cortes de caja.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

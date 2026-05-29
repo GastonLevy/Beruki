@@ -1,0 +1,95 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Detalle del corte de caja
+{% endblock %}
+
+{% block main %}
+
+    <div class="mb-4">
+        <a
+            href="{{ ea_url()
+                .setRoute('admin_cash_cuts_history')
+            }}"
+            class="btn btn-secondary btn-sm"
+        >
+            Volver al historial
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+
+            <h5 class="card-title mb-3">
+                Corte #{{ cashCut.id }}
+            </h5>
+
+            <p class="mb-1">
+                <strong>Usuario:</strong>
+                {{ cashCut.user.username }}
+            </p>
+
+            <p class="mb-1">
+                <strong>Fecha de corte:</strong>
+                {{ cashCut.closedAt|date('d/m/Y H:i') }}
+            </p>
+
+            <p class="mb-1">
+                <strong>Total:</strong>
+                ${{ cashCut.totalAmount }}
+            </p>
+
+            <p class="mb-0">
+                <strong>Cantidad de pagos:</strong>
+                {{ cashCut.paymentsCount }}
+            </p>
+
+        </div>
+    </div>
+
+    <table class="table datagrid table-hover">
+        <thead>
+            <tr>
+                <th>Fecha de pago</th>
+                <th>Abonado</th>
+                <th>Cliente</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for payment in payments %}
+                <tr
+                    role="button"
+                    style="cursor: pointer;"
+                    onclick="window.open('{{ ea_url()
+                        .setRoute('admin_customer_detail_view', { customerId: payment.customer.id })
+                    }}', '_blank')"
+                >
+                    <td>
+                        {{ payment.paidAt|date('d/m/Y H:i') }}
+                    </td>
+
+                    <td>
+                        {{ payment.customer.subscriberNumber }}
+                    </td>
+
+                    <td>
+                        {{ payment.customer.fullName }}
+                    </td>
+
+                    <td>
+                        ${{ payment.amount }}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        Este corte no tiene pagos asociados.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

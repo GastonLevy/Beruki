@@ -1,0 +1,132 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Historial de cortes
+{% endblock %}
+
+{% block main %}
+
+    <form
+        method="get"
+        action="{{ path('admin') }}"
+        class="card mb-4"
+    >
+        <input
+            type="hidden"
+            name="routeName"
+            value="admin_cash_cuts_history"
+        >
+
+        <div class="card-body">
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-md-4">
+                    <label for="username" class="form-label">
+                        Usuario
+                    </label>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value="{{ filters.username }}"
+                        class="form-control"
+                        placeholder="Buscar por usuario"
+                    >
+                </div>
+
+                <div class="col-md-3">
+                    <label for="dateFrom" class="form-label">
+                        Desde
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dateFrom"
+                        name="dateFrom"
+                        value="{{ filters.dateFrom }}"
+                        class="form-control"
+                    >
+                </div>
+
+                <div class="col-md-3">
+                    <label for="dateTo" class="form-label">
+                        Hasta
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dateTo"
+                        name="dateTo"
+                        value="{{ filters.dateTo }}"
+                        class="form-control"
+                    >
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Filtrar
+                    </button>
+
+                    <a
+                        href="{{ ea_url()
+                            .setRoute('admin_cash_cuts_history')
+                        }}"
+                        class="btn btn-secondary"
+                    >
+                        Limpiar
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </form>
+
+    <table class="table datagrid table-hover">
+        <thead>
+            <tr>
+                <th>Fecha de corte</th>
+                <th>Usuario</th>
+                <th>Total</th>
+                <th>Cantidad de pagos</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for cashCut in cashCuts %}
+                <tr
+                    role="button"
+                    style="cursor: pointer;"
+                    onclick="window.location.href='{{ ea_url()
+                        .setRoute('admin_cash_cuts_history_detail', { cashCutId: cashCut.id })
+                    }}'"
+                >
+                    <td>
+                        {{ cashCut.closedAt|date('d/m/Y H:i') }}
+                    </td>
+
+                    <td>
+                        {{ cashCut.user.username }}
+                    </td>
+
+                    <td>
+                        ${{ cashCut.totalAmount }}
+                    </td>
+
+                    <td>
+                        {{ cashCut.paymentsCount }}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        No se encontraron cortes de caja.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
