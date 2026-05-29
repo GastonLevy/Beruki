@@ -9,7 +9,7 @@
     class="btn btn-outline-secondary mb-4"
   >
     Volver
-</a>
+  </a>
 
   @if (customer$ | async; as customer) {
 
@@ -29,8 +29,80 @@
           <strong>Email:</strong> {{ customer.email }}
         </p>
 
-        <p>
-          <strong>Mensualidad:</strong> {{ customer.monthlyAmount }}
+        <hr>
+
+        <h3 class="h5 mb-3">
+          Planes asignados
+        </h3>
+
+        @if (customer.plans && customer.plans.length > 0) {
+
+          <div class="table-responsive mb-4">
+
+            <table class="table table-sm align-middle">
+
+              <thead>
+
+                <tr>
+                  <th>Plan</th>
+                  <th>Descripción</th>
+                  <th>Precio mensual</th>
+                  <th>Estado</th>
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                @for (customerPlan of customer.plans; track customerPlan.id) {
+
+                  <tr>
+
+                    <td>
+                      {{ customerPlan.plan.name }}
+                    </td>
+
+                    <td>
+                      {{ customerPlan.plan.description || '-' }}
+                    </td>
+
+                    <td>
+                      {{ customerPlan.plan.monthlyPrice | currency:'ARS':'symbol-narrow':'1.2-2' }}
+                    </td>
+
+                    <td>
+                      @if (customerPlan.isActive && customerPlan.plan.isActive) {
+                        <span class="badge text-bg-success">
+                          Activo
+                        </span>
+                      } @else {
+                        <span class="badge text-bg-secondary">
+                          Inactivo
+                        </span>
+                      }
+                    </td>
+
+                  </tr>
+
+                }
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        } @else {
+
+          <p class="text-muted">
+            Este cliente no tiene planes asignados.
+          </p>
+
+        }
+
+        <p class="fs-5">
+          <strong>Total mensual:</strong>
+          {{ customer.monthlyAmount | currency:'ARS':'symbol-narrow':'1.2-2' }}
         </p>
 
         <p>
@@ -50,7 +122,7 @@
         <button
           type="button"
           class="btn btn-success mt-3"
-          [disabled]="!customer.monthlyDebt"
+          [disabled]="!customer.monthlyDebt || customer.monthlyAmount === '0.00'"
           (click)="payMonthlyFee()"
         >
           @if (customer.monthlyDebt) {

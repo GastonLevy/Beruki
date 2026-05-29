@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Customer;
 use App\Entity\CustomerPayment;
 use App\Entity\User;
 use App\Repository\CustomerPaymentRepository;
@@ -33,7 +34,7 @@ final class CustomerController extends AbstractController
 
         return $this->json([
             'data' => array_map(
-                fn($customer) => $this->serializeCustomer($customer),
+                fn(Customer $customer) => $this->serializeCustomer($customer),
                 $result['data']
             ),
             'pagination' => [
@@ -52,7 +53,7 @@ final class CustomerController extends AbstractController
     ): JsonResponse {
         $customer = $customerRepository->find($id);
 
-        if (!$customer) {
+        if (!$customer instanceof Customer) {
             return $this->json([
                 'message' => 'Customer not found',
             ], 404);
@@ -70,7 +71,7 @@ final class CustomerController extends AbstractController
     ): JsonResponse {
         $customer = $customerRepository->find($id);
 
-        if (!$customer) {
+        if (!$customer instanceof Customer) {
             return $this->json([
                 'message' => 'Customer not found',
             ], 404);
@@ -90,18 +91,18 @@ final class CustomerController extends AbstractController
             ], 409);
         }
 
-        $amount = $customer->getMonthlyAmount();
+        $amount = $this->getCustomerActivePlansTotal($customer);
 
-        if (!$amount) {
+        if ($amount === '0.00') {
             return $this->json([
-                'message' => 'Customer monthly amount is not configured',
+                'message' => 'Customer has no active plans configured',
             ], 400);
         }
 
         $payment = new CustomerPayment();
         $payment->setCustomer($customer);
         $payment->setUser($user);
-        $payment->setAmount((string) $amount);
+        $payment->setAmount($amount);
         $payment->setPaidAt(new \DateTimeImmutable());
 
         $customer->setMonthlyDebt(false);
@@ -118,15 +119,53 @@ final class CustomerController extends AbstractController
         ], 201);
     }
 
-    private function serializeCustomer(object $customer): array
+    private function serializeCustomer(Customer $customer): array
     {
+        $activePlansTotal = $this->getCustomerActivePlansTotal($customer);
+
         return [
             'id' => $customer->getId(),
             'fullName' => $customer->getFullName(),
             'subscriberNumber' => $customer->getSubscriberNumber(),
             'email' => $customer->getEmail(),
-            'monthlyAmount' => $customer->getMonthlyAmount(),
+            'monthlyAmount' => $activePlansTotal,
             'monthlyDebt' => $customer->isMonthlyDebt(),
+            'plans' => array_values(array_map(
+                fn($customerPlan) => [
+                    'id' => $customerPlan->getId(),
+                    'isActive' => $customerPlan->isActive(),
+                    'startedAt' => $customerPlan->getStartedAt()?->format('Y-m-d H:i:s'),
+                    'plan' => [
+                        'id' => $customerPlan->getPlan()?->getId(),
+                        'name' => $customerPlan->getPlan()?->getName(),
+                        'description' => $customerPlan->getPlan()?->getDescription(),
+                        'monthlyPrice' => $customerPlan->getPlan()?->getMonthlyPrice(),
+                        'isActive' => $customerPlan->getPlan()?->isActive(),
+                    ],
+                ],
+                $customer->getCustomerPlans()->toArray()
+            )),
         ];
+    }
+
+    private function getCustomerActivePlansTotal(Customer $customer): string
+    {
+        $total = 0;
+
+        foreach ($customer->getCustomerPlans() as $customerPlan) {
+            $plan = $customerPlan->getPlan();
+
+            if (!$customerPlan->isActive()) {
+                continue;
+            }
+
+            if (!$plan || !$plan->isActive()) {
+                continue;
+            }
+
+            $total += (float) $plan->getMonthlyPrice();
+        }
+
+        return number_format($total, 2, '.', '');
     }
 }
