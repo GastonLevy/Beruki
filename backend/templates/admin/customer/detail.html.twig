@@ -1,0 +1,95 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block content_title %}
+    Detalle del cliente
+{% endblock %}
+
+{% block main %}
+
+    <div class="mb-4">
+        <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            onclick="window.close()"
+        >
+            Cerrar
+        </button>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+
+            <h5 class="card-title mb-4">
+                {{ customer.fullName }}
+            </h5>
+
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th>Abonado</th>
+                        <td>{{ customer.subscriberNumber }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Nombre</th>
+                        <td>{{ customer.fullName }}</td>
+                    </tr>
+
+                    <tr>
+                        <th>Email</th>
+                        <td>{{ customer.email }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <h2 class="h5 mb-3">
+        Historial de pagos
+    </h2>
+
+    <table class="table datagrid">
+        <thead>
+            <tr>
+                <th>Fecha de pago</th>
+                <th>Monto</th>
+                <th>Cobrado por</th>
+                <th>Corte de caja</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for payment in payments %}
+                <tr>
+                    <td>
+                        {{ payment.paidAt|date('d/m/Y H:i') }}
+                    </td>
+
+                    <td>
+                        ${{ payment.amount }}
+                    </td>
+
+                    <td>
+                        {{ payment.user.username }}
+                    </td>
+
+                    <td>
+                        {% if payment.cashCut %}
+                            Cerrado
+                        {% else %}
+                            Pendiente
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted">
+                        Este cliente todavía no tiene pagos registrados.
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}

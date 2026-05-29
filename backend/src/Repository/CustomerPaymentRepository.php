@@ -60,4 +60,17 @@ class CustomerPaymentRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findPendingPaymentsByUserWithCustomer(int $userId): array
+    {
+        return $this->createQueryBuilder('payment')
+            ->addSelect('customer')
+            ->join('payment.customer', 'customer')
+            ->andWhere('payment.user = :userId')
+            ->andWhere('payment.cashCut IS NULL')
+            ->setParameter('userId', $userId)
+            ->orderBy('payment.paidAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

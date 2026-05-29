@@ -32,15 +32,14 @@
                     </td>
 
                     <td class="text-end">
-                        <form
-                            method="post"
-                            action="{{ path('admin_cash_cuts_close', { userId: collection.userId }) }}"
-                            onsubmit="return confirm('¿Confirmar corte de caja para este usuario?');"
+                        <a
+                            href="{{ ea_url()
+                                .setRoute('admin_cash_cuts_detail', { userId: collection.userId })
+                            }}"
+                            class="btn btn-primary btn-sm"
                         >
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                Hacer corte
-                            </button>
-                        </form>
+                            Ver detalle
+                        </a>
                     </td>
                 </tr>
             {% else %}
