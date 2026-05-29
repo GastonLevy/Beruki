@@ -27,6 +27,30 @@ export class Auth {
     return !!this.getToken();
   }
 
+  getPayload(): any | null {
+
+    const token = this.getToken();
+
+    if (!token) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(atob(token.split('.')[1]));
+    } catch {
+      return null;
+    }
+
+  }
+
+  isAdmin(): boolean {
+
+    const payload = this.getPayload();
+
+    return payload?.roles?.includes('ROLE_ADMIN') ?? false;
+
+  }
+
   logout(): void {
     localStorage.removeItem('token');
   }

@@ -12,6 +12,15 @@
         Usuario
       </span>
 
+      @if (isAdmin()) {
+        <button
+          class="btn btn-outline-primary"
+          (click)="goToAdmin()"
+        >
+          Panel de Administración
+        </button>
+      }
+
       <button
         class="btn btn-outline-light"
         (click)="logout()"

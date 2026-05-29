@@ -36,5 +36,20 @@ services:
     command: npx ng serve --host 0.0.0.0 --poll 1000
     tty: true
 
+  nginx:
+    image: nginx:stable
+    container_name: beruki_nginx
+    restart: unless-stopped
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+    depends_on:
+      - frontend
+      - backend
+
 volumes:
   db_data:

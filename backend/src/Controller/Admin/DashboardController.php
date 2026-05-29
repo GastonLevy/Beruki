@@ -24,7 +24,13 @@ class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
+        yield MenuItem::linkToUrl(
+            'Volver al panel de clientes',
+            'fa fa-arrow-left',
+            '/customers'
+        );
+
+        yield MenuItem::section('Operación');
 
         yield MenuItem::linkToRoute(
             'Clientes',
@@ -39,21 +45,25 @@ class DashboardController extends AbstractDashboardController
         );
 
         yield MenuItem::linkToRoute(
+            'Cortes de caja',
+            'fa fa-cash-register',
+            'admin_cash_cuts_pending'
+        );
+
+        yield MenuItem::section('Planes de clientes');
+
+        yield MenuItem::linkToRoute(
             'Planes de clientes',
             'fa fa-user-tag',
             'admin_customer_plan_index'
         );
 
+        yield MenuItem::section('Usuarios');
+
         yield MenuItem::linkToRoute(
             'Usuarios',
             'fa fa-user-shield',
             'admin_user_index'
-        );
-
-        yield MenuItem::linkToRoute(
-            'Cortes de caja',
-            'fa fa-cash-register',
-            'admin_cash_cuts_pending'
         );
     }
 }
