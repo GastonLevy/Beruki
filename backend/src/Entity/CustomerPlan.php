@@ -27,6 +27,12 @@ class CustomerPlan
     #[ORM\Column]
     private ?bool $isActive = null;
 
+    public function __construct()
+    {
+        $this->startedAt = new \DateTimeImmutable();
+        $this->isActive = true;
+    }
+
     public function __toString(): string
     {
         $customerName = $this->customer?->getFullName() ?? 'Cliente sin nombre';
@@ -69,9 +75,9 @@ class CustomerPlan
         return $this->startedAt;
     }
 
-    public function setStartedAt(\DateTimeImmutable $startedAt): static
+    public function setStartedAt(?\DateTimeImmutable $startedAt): static
     {
-        $this->startedAt = $startedAt;
+        $this->startedAt = $startedAt ?? new \DateTimeImmutable();
 
         return $this;
     }
@@ -81,9 +87,9 @@ class CustomerPlan
         return $this->isActive;
     }
 
-    public function setIsActive(bool $isActive): static
+    public function setIsActive(?bool $isActive): static
     {
-        $this->isActive = $isActive;
+        $this->isActive = $isActive ?? true;
 
         return $this;
     }
