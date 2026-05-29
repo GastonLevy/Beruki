@@ -34,7 +34,12 @@ class Customer
     /**
      * @var Collection<int, CustomerPlan>
      */
-    #[ORM\OneToMany(targetEntity: CustomerPlan::class, mappedBy: 'customer', orphanRemoval: true)]
+    #[ORM\OneToMany(
+        targetEntity: CustomerPlan::class,
+        mappedBy: 'customer',
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
     private Collection $customerPlans;
 
     public function __construct()

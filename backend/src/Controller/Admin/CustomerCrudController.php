@@ -3,9 +3,11 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Customer;
+use App\Form\CustomerPlanType;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\EmailField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
@@ -47,6 +49,12 @@ class CustomerCrudController extends AbstractCrudController
                 ->hideOnForm(),
 
             BooleanField::new('monthlyDebt', 'Debe mes'),
+
+            CollectionField::new('customerPlans', 'Planes asignados')
+                ->setEntryType(CustomerPlanType::class)
+                ->allowAdd()
+                ->allowDelete()
+                ->onlyOnForms(),
         ];
     }
 }
