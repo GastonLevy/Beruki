@@ -18,78 +18,138 @@
     </div>
 
     <div class="card mb-4">
-        <div class="card-body">
+        <div class="card-body p-4">
 
-            <h5 class="card-title mb-3">
-                Corte #{{ cashCut.id }}
-            </h5>
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h5 class="card-title mb-1">
+                        Corte #{{ cashCut.id }}
+                    </h5>
 
-            <p class="mb-1">
-                <strong>Usuario:</strong>
-                {{ cashCut.user.username }}
-            </p>
+                    <div class="text-muted">
+                        {{ cashCut.closedAt|date('d/m/Y H:i') }}
+                    </div>
+                </div>
 
-            <p class="mb-1">
-                <strong>Fecha de corte:</strong>
-                {{ cashCut.closedAt|date('d/m/Y H:i') }}
-            </p>
+                <div class="text-end">
+                    <div class="text-muted small">
+                        Usuario
+                    </div>
 
-            <p class="mb-1">
-                <strong>Total:</strong>
-                ${{ cashCut.totalAmount }}
-            </p>
+                    <strong>
+                        {{ cashCut.user.username }}
+                    </strong>
+                </div>
+            </div>
 
-            <p class="mb-0">
-                <strong>Cantidad de pagos:</strong>
-                {{ cashCut.paymentsCount }}
-            </p>
+            <div class="row g-3">
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Total recaudado
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            ${{ cashCut.totalAmount|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Comisión del usuario
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            ${{ cashCut.userCommissionAmount|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Total a retirar
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            ${{ cashCut.amountToWithdraw|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Cantidad de pagos
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            {{ cashCut.paymentsCount }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
 
         </div>
     </div>
 
-    <table class="table datagrid table-hover">
-        <thead>
-            <tr>
-                <th>Fecha de pago</th>
-                <th>Abonado</th>
-                <th>Cliente</th>
-                <th>Monto</th>
-            </tr>
-        </thead>
+    <div class="card">
+        <div class="card-body p-4">
 
-        <tbody>
-            {% for payment in payments %}
-                <tr
-                    role="button"
-                    style="cursor: pointer;"
-                    onclick="window.open('{{ ea_url()
-                        .setRoute('admin_customer_detail_view', { customerId: payment.customer.id })
-                    }}', '_blank')"
-                >
-                    <td>
-                        {{ payment.paidAt|date('d/m/Y H:i') }}
-                    </td>
+            <h5 class="card-title mb-3">
+                Pagos incluidos en el corte
+            </h5>
 
-                    <td>
-                        {{ payment.customer.subscriberNumber }}
-                    </td>
+            <table class="table datagrid table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha de pago</th>
+                        <th>Abonado</th>
+                        <th>Cliente</th>
+                        <th class="text-end">Monto</th>
+                    </tr>
+                </thead>
 
-                    <td>
-                        {{ payment.customer.fullName }}
-                    </td>
+                <tbody>
+                    {% for payment in payments %}
+                        <tr
+                            role="button"
+                            style="cursor: pointer;"
+                            onclick="window.open('{{ ea_url()
+                                .setRoute('admin_customer_detail_view', { customerId: payment.customer.id })
+                            }}', '_blank')"
+                        >
+                            <td>
+                                {{ payment.paidAt|date('d/m/Y H:i') }}
+                            </td>
 
-                    <td>
-                        ${{ payment.amount }}
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        Este corte no tiene pagos asociados.
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            <td>
+                                {{ payment.customer.subscriberNumber }}
+                            </td>
+
+                            <td>
+                                {{ payment.customer.fullName }}
+                            </td>
+
+                            <td class="text-end">
+                                ${{ payment.amount|number_format(2, ',', '.') }}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                Este corte no tiene pagos asociados.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
 
 {% endblock %}

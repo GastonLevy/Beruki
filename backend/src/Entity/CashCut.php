@@ -23,6 +23,12 @@ class CashCut
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $totalAmount = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private ?string $userCommissionAmount = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private ?string $amountToWithdraw = null;
+
     #[ORM\Column]
     private ?int $paymentsCount = null;
 
@@ -65,6 +71,30 @@ class CashCut
     public function setTotalAmount(string $totalAmount): static
     {
         $this->totalAmount = $totalAmount;
+
+        return $this;
+    }
+
+    public function getUserCommissionAmount(): ?string
+    {
+        return $this->userCommissionAmount;
+    }
+
+    public function setUserCommissionAmount(string $userCommissionAmount): static
+    {
+        $this->userCommissionAmount = $userCommissionAmount;
+
+        return $this;
+    }
+
+    public function getAmountToWithdraw(): ?string
+    {
+        return $this->amountToWithdraw;
+    }
+
+    public function setAmountToWithdraw(string $amountToWithdraw): static
+    {
+        $this->amountToWithdraw = $amountToWithdraw;
 
         return $this;
     }
@@ -114,7 +144,6 @@ class CashCut
     public function removeCustomerPayment(CustomerPayment $customerPayment): static
     {
         if ($this->customerPayments->removeElement($customerPayment)) {
-            // set the owning side to null (unless already changed)
             if ($customerPayment->getCashCut() === $this) {
                 $customerPayment->setCashCut(null);
             }

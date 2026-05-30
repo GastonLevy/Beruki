@@ -54,11 +54,16 @@ final class CashCutDashboardController extends AbstractController
             $totalAmount += (float) $payment->getAmount();
         }
 
-        $totalAmount = number_format($totalAmount, 2, '.', '');
+        $commissionPercentage = (float) $user->getCommissionPercentage();
+
+        $userCommissionAmount = $totalAmount * $commissionPercentage / 100;
+        $amountToWithdraw = $totalAmount - $userCommissionAmount;
 
         $cashCut = new CashCut();
         $cashCut->setUser($user);
-        $cashCut->setTotalAmount($totalAmount);
+        $cashCut->setTotalAmount(number_format($totalAmount, 2, '.', ''));
+        $cashCut->setUserCommissionAmount(number_format($userCommissionAmount, 2, '.', ''));
+        $cashCut->setAmountToWithdraw(number_format($amountToWithdraw, 2, '.', ''));
         $cashCut->setPaymentsCount(count($payments));
         $cashCut->setClosedAt(new \DateTimeImmutable());
 
@@ -106,10 +111,17 @@ final class CashCutDashboardController extends AbstractController
             $totalAmount += (float) $payment->getAmount();
         }
 
+        $commissionPercentage = (float) $user->getCommissionPercentage();
+
+        $userCommissionAmount = $totalAmount * $commissionPercentage / 100;
+        $amountToWithdraw = $totalAmount - $userCommissionAmount;
+
         return $this->render('admin/cash_cut_dashboard/detail.html.twig', [
             'user' => $user,
             'payments' => $payments,
             'totalAmount' => number_format($totalAmount, 2, '.', ''),
+            'userCommissionAmount' => number_format($userCommissionAmount, 2, '.', ''),
+            'amountToWithdraw' => number_format($amountToWithdraw, 2, '.', ''),
         ]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -32,6 +33,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
+    private string $commissionPercentage = '5.00';
 
     /**
      * @var Collection<int, CashCut>
@@ -61,6 +65,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getCommissionPercentage(): string
+    {
+        return $this->commissionPercentage;
+    }
+
+    public function setCommissionPercentage(string $commissionPercentage): static
+    {
+        $this->commissionPercentage = $commissionPercentage;
+
+        return $this;
+    }
+
     /**
      * A visual identifier that represents this user.
      *
@@ -77,7 +93,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
@@ -146,7 +161,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeCashCut(CashCut $cashCut): static
     {
         if ($this->cashCuts->removeElement($cashCut)) {
-            // set the owning side to null (unless already changed)
             if ($cashCut->getUser() === $this) {
                 $cashCut->setUser(null);
             }

@@ -89,7 +89,9 @@
             <tr>
                 <th>Fecha de corte</th>
                 <th>Usuario</th>
-                <th>Total</th>
+                <th>Total recaudado</th>
+                <th>Comisión del usuario</th>
+                <th>Total a retirar</th>
                 <th>Cantidad de pagos</th>
             </tr>
         </thead>
@@ -112,7 +114,15 @@
                     </td>
 
                     <td>
-                        ${{ cashCut.totalAmount }}
+                        ${{ cashCut.totalAmount|number_format(2, ',', '.') }}
+                    </td>
+
+                    <td>
+                        ${{ cashCut.userCommissionAmount|number_format(2, ',', '.') }}
+                    </td>
+
+                    <td>
+                        ${{ cashCut.amountToWithdraw|number_format(2, ',', '.') }}
                     </td>
 
                     <td>
@@ -121,7 +131,7 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="4" class="text-center text-muted">
+                    <td colspan="6" class="text-center text-muted">
                         No se encontraron cortes de caja.
                     </td>
                 </tr>
