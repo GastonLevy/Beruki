@@ -28,6 +28,7 @@ class Plan
     #[ORM\Column]
     private ?bool $isActive = null;
 
+
     /**
      * @var Collection<int, CustomerPlan>
      */

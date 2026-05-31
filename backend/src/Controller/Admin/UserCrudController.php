@@ -7,6 +7,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -36,7 +37,7 @@ class UserCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        return [
+        $fields = [
             IdField::new('id')
                 ->hideOnForm(),
 
@@ -49,10 +50,22 @@ class UserCrudController extends AbstractCrudController
                     'Administrador' => 'ROLE_ADMIN',
                 ]),
 
-            TextField::new('password', 'Contraseña')
-                ->setFormType(PasswordType::class)
-                ->onlyOnForms(),
+            NumberField::new('commissionPercentage', 'Comisión (%)')
+                ->setNumDecimals(2),
         ];
+
+        $passwordField = TextField::new('plainPassword', 'Nueva contraseña')
+            ->setFormType(PasswordType::class)
+            ->setRequired($pageName === Crud::PAGE_NEW)
+            ->onlyOnForms();
+
+        if ($pageName === Crud::PAGE_EDIT) {
+            $passwordField->setHelp('Dejar vacío para mantener la contraseña actual.');
+        }
+
+        $fields[] = $passwordField;
+
+        return $fields;
     }
 
     public function persistEntity($entityManager, $entityInstance): void
@@ -61,13 +74,36 @@ class UserCrudController extends AbstractCrudController
             return;
         }
 
-        $hashedPassword = $this->passwordHasher->hashPassword(
-            $entityInstance,
-            $entityInstance->getPassword()
-        );
-
-        $entityInstance->setPassword($hashedPassword);
+        $this->hashPasswordIfNeeded($entityInstance);
 
         parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    public function updateEntity($entityManager, $entityInstance): void
+    {
+        if (!$entityInstance instanceof User) {
+            return;
+        }
+
+        $this->hashPasswordIfNeeded($entityInstance);
+
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    private function hashPasswordIfNeeded(User $user): void
+    {
+        $plainPassword = $user->getPlainPassword();
+
+        if ($plainPassword === null || trim($plainPassword) === '') {
+            return;
+        }
+
+        $hashedPassword = $this->passwordHasher->hashPassword(
+            $user,
+            $plainPassword
+        );
+
+        $user->setPassword($hashedPassword);
+        $user->setPlainPassword(null);
     }
 }

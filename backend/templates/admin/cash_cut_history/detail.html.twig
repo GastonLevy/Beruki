@@ -65,6 +65,10 @@
                         <div class="fs-5 fw-bold">
                             ${{ cashCut.userCommissionAmount|number_format(2, ',', '.') }}
                         </div>
+
+                        <div class="text-muted small">
+                            {{ cashCut.userCommissionPercentage|number_format(2, ',', '.') }}%
+                        </div>
                     </div>
                 </div>
 
@@ -83,7 +87,7 @@
                 <div class="col-md-3">
                     <div class="border rounded p-3 h-100">
                         <div class="text-muted small mb-1">
-                            Cantidad de pagos
+                            Abonados cobrados
                         </div>
 
                         <div class="fs-5 fw-bold">
@@ -101,7 +105,7 @@
         <div class="card-body p-4">
 
             <h5 class="card-title mb-3">
-                Pagos incluidos en el corte
+                Cobros de abonados incluidos en el corte
             </h5>
 
             <table class="table datagrid table-hover mb-0">

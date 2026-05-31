@@ -63,6 +63,7 @@ final class CashCutDashboardController extends AbstractController
         $cashCut->setUser($user);
         $cashCut->setTotalAmount(number_format($totalAmount, 2, '.', ''));
         $cashCut->setUserCommissionAmount(number_format($userCommissionAmount, 2, '.', ''));
+        $cashCut->setUserCommissionPercentage(number_format($commissionPercentage, 2, '.', ''));
         $cashCut->setAmountToWithdraw(number_format($amountToWithdraw, 2, '.', ''));
         $cashCut->setPaymentsCount(count($payments));
         $cashCut->setClosedAt(new \DateTimeImmutable());
@@ -121,6 +122,7 @@ final class CashCutDashboardController extends AbstractController
             'payments' => $payments,
             'totalAmount' => number_format($totalAmount, 2, '.', ''),
             'userCommissionAmount' => number_format($userCommissionAmount, 2, '.', ''),
+            'userCommissionPercentage' => number_format($commissionPercentage, 2, '.', ''),
             'amountToWithdraw' => number_format($amountToWithdraw, 2, '.', ''),
         ]);
     }

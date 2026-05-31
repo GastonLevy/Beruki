@@ -26,6 +26,9 @@ class CashCut
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $userCommissionAmount = null;
 
+    #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
+    private ?string $userCommissionPercentage = null;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $amountToWithdraw = null;
 
@@ -83,6 +86,18 @@ class CashCut
     public function setUserCommissionAmount(string $userCommissionAmount): static
     {
         $this->userCommissionAmount = $userCommissionAmount;
+
+        return $this;
+    }
+
+    public function getUserCommissionPercentage(): ?string
+    {
+        return $this->userCommissionPercentage;
+    }
+
+    public function setUserCommissionPercentage(string $userCommissionPercentage): static
+    {
+        $this->userCommissionPercentage = $userCommissionPercentage;
 
         return $this;
     }

@@ -18,77 +18,143 @@
     </div>
 
     <div class="card mb-4">
-        <div class="card-body">
-            <h5 class="card-title mb-3">
-                Usuario: {{ user.username }}
-            </h5>
+        <div class="card-body p-4">
 
-            <p class="mb-1">
-                <strong>Total pendiente:</strong>
-                ${{ totalAmount|number_format(2, ',', '.') }}
-            </p>
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <h5 class="card-title mb-1">
+                        Corte pendiente
+                    </h5>
 
-            <p class="mb-1">
-                <strong>Comisión del usuario:</strong>
-                ${{ userCommissionAmount|number_format(2, ',', '.') }}
-            </p>
+                    <div class="text-muted">
+                        Caja pendiente de cierre
+                    </div>
+                </div>
 
-            <p class="mb-1">
-                <strong>Total a retirar:</strong>
-                ${{ amountToWithdraw|number_format(2, ',', '.') }}
-            </p>
+                <div class="text-end">
+                    <div class="text-muted small">
+                        Usuario
+                    </div>
 
-            <p class="mb-0">
-                <strong>Cantidad de pagos:</strong>
-                {{ payments|length }}
-            </p>
+                    <strong>
+                        {{ user.username }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="row g-3">
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Total recaudado
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            ${{ totalAmount|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Comisión del usuario
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            ${{ userCommissionAmount|number_format(2, ',', '.') }}
+                        </div>
+
+                        <div class="text-muted small">
+                            {{ userCommissionPercentage|number_format(2, ',', '.') }}%
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Total a retirar
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            ${{ amountToWithdraw|number_format(2, ',', '.') }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded p-3 h-100">
+                        <div class="text-muted small mb-1">
+                            Abonados cobrados
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+                            {{ payments|length }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
     </div>
 
-    <table class="table datagrid table-hover">
-        <thead>
-            <tr>
-                <th>Fecha de pago</th>
-                <th>Abonado</th>
-                <th>Cliente</th>
-                <th>Monto</th>
-            </tr>
-        </thead>
+    <div class="card">
+        <div class="card-body p-4">
 
-        <tbody>
-            {% for payment in payments %}
-                <tr
-                    role="button"
-                    style="cursor: pointer;"
-                    onclick="window.open('{{ ea_url()
-                        .setRoute('admin_customer_detail_view', { customerId: payment.customer.id })
-                    }}', '_blank')"
-                >
-                    <td>
-                        {{ payment.paidAt|date('d/m/Y H:i') }}
-                    </td>
+            <h5 class="card-title mb-3">
+                Cobros de abonados incluidos en el corte
+            </h5>
 
-                    <td>
-                        {{ payment.customer.subscriberNumber }}
-                    </td>
+            <table class="table datagrid table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha de pago</th>
+                        <th>Abonado</th>
+                        <th>Cliente</th>
+                        <th class="text-end">Monto</th>
+                    </tr>
+                </thead>
 
-                    <td>
-                        {{ payment.customer.fullName }}
-                    </td>
+                <tbody>
+                    {% for payment in payments %}
+                        <tr
+                            role="button"
+                            style="cursor: pointer;"
+                            onclick="window.open('{{ ea_url()
+                                .setRoute('admin_customer_detail_view', { customerId: payment.customer.id })
+                            }}', '_blank')"
+                        >
+                            <td>
+                                {{ payment.paidAt|date('d/m/Y H:i') }}
+                            </td>
 
-                    <td>
-                        ${{ payment.amount|number_format(2, ',', '.') }}
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted">
-                        No hay pagos pendientes para este usuario.
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            <td>
+                                {{ payment.customer.subscriberNumber }}
+                            </td>
+
+                            <td>
+                                {{ payment.customer.fullName }}
+                            </td>
+
+                            <td class="text-end">
+                                ${{ payment.amount|number_format(2, ',', '.') }}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">
+                                No hay pagos pendientes para este usuario.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
 
     {% if payments|length > 0 %}
         <form
