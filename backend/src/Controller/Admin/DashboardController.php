@@ -19,7 +19,8 @@ class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('Beruki');
+            ->setTitle('Alsina Telecomunicaciones')
+            ->setFaviconPath('img/AlsinaLogoMini.png');
     }
 
     public function configureMenuItems(): iterable
