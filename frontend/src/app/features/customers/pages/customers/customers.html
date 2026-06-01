@@ -1,115 +1,168 @@
-<div class="container py-4">
+<div class="customers-page container py-4">
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="customers-header mb-4">
 
-    <h1 class="mb-0">
-      Clientes
-    </h1>
+    <div>
 
-    <input
-      type="text"
-      class="form-control w-auto"
-      placeholder="Buscar cliente..."
-      [(ngModel)]="search"
-      (input)="onSearch()"
-    >
+      <p class="customers-eyebrow mb-2">
+        Gestión
+      </p>
+
+      <h1 class="customers-title mb-2">
+        Clientes
+      </h1>
+
+      <p class="customers-description mb-0">
+        Buscá clientes por nombre, email o número de abonado.
+      </p>
+
+    </div>
+
+    <div class="customers-search">
+
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Buscar cliente..."
+        [(ngModel)]="search"
+        (input)="onSearch()"
+      >
+
+    </div>
 
   </div>
 
   @if (search.trim().length < 2) {
 
-    <div class="alert alert-secondary">
-      Ingrese al menos 2 caracteres para buscar un cliente.
+    <div class="card app-card">
+
+      <div class="card-body p-4">
+
+        <p class="customers-muted mb-0">
+          Ingresá al menos 2 caracteres para buscar un cliente.
+        </p>
+
+      </div>
+
     </div>
 
   } @else {
 
     @if (customers$ | async; as response) {
 
-      <div class="table-responsive">
+      <div class="card app-card">
 
-        <table class="table table-hover align-middle">
+        <div class="card-body p-0">
 
-          <thead>
+          <div class="table-responsive">
 
-            <tr>
-              <th>Abonado</th>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Mensualidad</th>
-              <th>Deuda</th>
-            </tr>
+            <table class="table customers-table align-middle mb-0">
 
-          </thead>
+              <thead>
 
-          <tbody>
+                <tr>
+                  <th>Abonado</th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Mensualidad</th>
+                  <th>Deuda</th>
+                </tr>
 
-            @for (customer of response.data; track customer.id) {
+              </thead>
 
-              <tr
-                role="button"
-                [routerLink]="['/customers', customer.id]"
-              >
+              <tbody>
 
-                <td>
-                  {{ customer.subscriberNumber }}
-                </td>
+                @for (customer of response.data; track customer.id) {
 
-                <td>
-                  {{ customer.fullName }}
-                </td>
+                  <tr
+                    class="customers-row"
+                    role="button"
+                    [routerLink]="['/customers', customer.id]"
+                  >
 
-                <td>
-                  {{ customer.email }}
-                </td>
+                    <td>
+                      <span class="customers-subscriber">
+                        #{{ customer.subscriberNumber }}
+                      </span>
+                    </td>
 
-                <td>
-                  ${{ customer.monthlyAmount }}
-                </td>
+                    <td>
+                      <strong>
+                        {{ customer.fullName }}
+                      </strong>
+                    </td>
 
-                <td>
+                    <td>
+                      <span class="customers-muted">
+                        {{ customer.email || '-' }}
+                      </span>
+                    </td>
 
-                  @if (customer.monthlyDebt) {
+                    <td>
+                      <strong>
+                        ${{ customer.monthlyAmount }}
+                      </strong>
+                    </td>
 
-                    <span class="badge text-bg-danger">
-                      Sí
-                    </span>
+                    <td>
 
-                  } @else {
+                      @if (customer.monthlyDebt) {
 
-                    <span class="badge text-bg-success">
-                      No
-                    </span>
+                        <span class="badge customers-badge-danger">
+                          Debe
+                        </span>
 
-                  }
+                      } @else {
 
-                </td>
+                        <span class="badge customers-badge-success">
+                          Pagado
+                        </span>
 
-              </tr>
+                      }
 
-            } @empty {
+                    </td>
 
-              <tr>
+                  </tr>
 
-                <td colspan="5" class="text-center text-muted py-4">
-                  No se encontraron clientes.
-                </td>
+                } @empty {
 
-              </tr>
+                  <tr>
 
-            }
+                    <td colspan="5">
 
-          </tbody>
+                      <div class="customers-empty-state">
+                        No se encontraron clientes.
+                      </div>
 
-        </table>
+                    </td>
+
+                  </tr>
+
+                }
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
 
       </div>
 
     } @else {
 
-      <p>
-        Cargando clientes...
-      </p>
+      <div class="card app-card">
+
+        <div class="card-body p-4">
+
+          <p class="customers-muted mb-0">
+            Cargando clientes...
+          </p>
+
+        </div>
+
+      </div>
 
     }
 
