@@ -3,8 +3,15 @@
   background: var(--app-bg);
 }
 
-.login-card {
+.login-logo {
+  width: 100%;
   max-width: 28rem;
+  height: auto;
+  object-fit: contain;
+}
+
+.login-card {
+  max-width: 34rem;
 }
 
 .login-title {
