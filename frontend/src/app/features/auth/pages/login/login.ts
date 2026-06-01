@@ -25,7 +25,6 @@ export class Login {
   ) {}
 
   onSubmit(): void {
-
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -35,17 +34,13 @@ export class Login {
 
     this.auth.login(username!, password!).subscribe({
       next: (response: any) => {
-
         this.auth.setToken(response.token);
-
         this.router.navigate(['/customers']);
-
       },
       error: (error) => {
         console.error(error);
       }
     });
-
   }
 
 }

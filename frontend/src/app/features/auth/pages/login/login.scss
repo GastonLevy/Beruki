@@ -1,0 +1,49 @@
+.login-page {
+  min-height: 100vh;
+  background: var(--app-bg);
+}
+
+.login-card {
+  max-width: 28rem;
+}
+
+.login-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--app-text);
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--app-text);
+}
+
+.form-control {
+  border-radius: var(--app-radius-md);
+  border-color: var(--app-border);
+  background-color: var(--app-surface);
+  color: var(--app-text);
+
+  &:focus {
+    border-color: var(--app-primary);
+    box-shadow: 0 0 0 0.2rem var(--app-primary-soft);
+  }
+}
+
+.btn-primary {
+  border: 0;
+  border-radius: var(--app-radius-md);
+  background-color: var(--app-primary);
+  font-weight: 700;
+
+  &:hover,
+  &:focus {
+    background-color: var(--app-primary-hover);
+  }
+
+  &:disabled {
+    background-color: color-mix(in srgb, var(--app-primary) 45%, white);
+  }
+}
