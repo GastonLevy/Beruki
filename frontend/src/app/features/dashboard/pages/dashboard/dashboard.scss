@@ -1,0 +1,65 @@
+.dashboard-page {
+  min-height: 100%;
+}
+
+.dashboard-header {
+  max-width: 48rem;
+}
+
+.dashboard-eyebrow {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--app-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--app-text);
+}
+
+.dashboard-description {
+  color: var(--app-text-muted);
+  font-size: 1rem;
+}
+
+.dashboard-card {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--app-shadow-md);
+  }
+}
+
+.dashboard-card-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--app-text);
+}
+
+.dashboard-card-text {
+  color: var(--app-text-muted);
+}
+
+.btn-primary {
+  border: 0;
+  border-radius: var(--app-radius-md);
+  background-color: var(--app-primary);
+  font-weight: 700;
+
+  &:hover,
+  &:focus {
+    background-color: var(--app-primary-hover);
+  }
+}
+
+.btn-outline-danger {
+  border-radius: var(--app-radius-md);
+  font-weight: 700;
+}

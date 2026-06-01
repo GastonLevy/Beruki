@@ -1,9 +1,79 @@
-<h1>Dashboard works</h1>
+<div class="dashboard-page container py-4">
 
-<button (click)="loadCustomers()">
-  Load customers
-</button>
+  <div class="dashboard-header mb-4">
 
-<button (click)="logout()">
-  Logout
-</button>
+    <p class="dashboard-eyebrow mb-2">
+      Panel principal
+    </p>
+
+    <h1 class="dashboard-title mb-2">
+      Bienvenido a Beruki
+    </h1>
+
+    <p class="dashboard-description mb-0">
+      Gestioná clientes, pagos, mensualidades y operaciones del sistema desde un solo lugar.
+    </p>
+
+  </div>
+
+  <div class="row g-4">
+
+    <div class="col-12 col-md-6 col-xl-4">
+
+      <div class="card app-card dashboard-card h-100">
+
+        <div class="card-body p-4">
+
+          <h2 class="dashboard-card-title mb-2">
+            Clientes
+          </h2>
+
+          <p class="dashboard-card-text mb-4">
+            Cargá y revisá la información de los clientes registrados.
+          </p>
+
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="loadCustomers()"
+          >
+            Cargar clientes
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="col-12 col-md-6 col-xl-4">
+
+      <div class="card app-card dashboard-card h-100">
+
+        <div class="card-body p-4">
+
+          <h2 class="dashboard-card-title mb-2">
+            Sesión
+          </h2>
+
+          <p class="dashboard-card-text mb-4">
+            Cerrá la sesión actual de forma segura.
+          </p>
+
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            (click)="logout()"
+          >
+            Cerrar sesión
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
