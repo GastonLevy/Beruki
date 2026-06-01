@@ -1,147 +1,262 @@
-<div class="container py-4">
+<div class="customer-detail-page container py-4">
 
-  <h1 class="mb-4">
-    Cliente detail
-  </h1>
+  <div class="customer-detail-header mb-4">
 
-  <a
-    routerLink="/customers"
-    class="btn btn-outline-secondary mb-4"
-  >
-    Volver
-  </a>
+    <a
+      routerLink="/customers"
+      class="btn btn-light customer-back-button mb-3"
+    >
+      ← Volver a clientes
+    </a>
 
-  @if (customer$ | async; as customer) {
+    <p class="customer-eyebrow mb-2">
+      Detalle del cliente
+    </p>
 
-    <div class="card border-0 shadow-sm">
+    @if (customer$ | async; as customer) {
 
-      <div class="card-body">
+      <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
 
-        <h2 class="h4 mb-4">
-          {{ customer.fullName }}
-        </h2>
+        <div>
 
-        <p>
-          <strong>Abonado:</strong> {{ customer.subscriberNumber }}
-        </p>
+          <h1 class="customer-title mb-2">
+            {{ customer.fullName }}
+          </h1>
 
-        <p>
-          <strong>Email:</strong> {{ customer.email }}
-        </p>
-
-        <hr>
-
-        <h3 class="h5 mb-3">
-          Planes asignados
-        </h3>
-
-        @if (customer.plans && customer.plans.length > 0) {
-
-          <div class="table-responsive mb-4">
-
-            <table class="table table-sm align-middle">
-
-              <thead>
-
-                <tr>
-                  <th>Plan</th>
-                  <th>Descripción</th>
-                  <th>Precio mensual</th>
-                  <th>Estado</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                @for (customerPlan of customer.plans; track customerPlan.id) {
-
-                  <tr>
-
-                    <td>
-                      {{ customerPlan.plan.name }}
-                    </td>
-
-                    <td>
-                      {{ customerPlan.plan.description || '-' }}
-                    </td>
-
-                    <td>
-                      {{ customerPlan.plan.monthlyPrice | currency:'ARS':'symbol-narrow':'1.2-2' }}
-                    </td>
-
-                    <td>
-                      @if (customerPlan.isActive && customerPlan.plan.isActive) {
-                        <span class="badge text-bg-success">
-                          Activo
-                        </span>
-                      } @else {
-                        <span class="badge text-bg-secondary">
-                          Inactivo
-                        </span>
-                      }
-                    </td>
-
-                  </tr>
-
-                }
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        } @else {
-
-          <p class="text-muted">
-            Este cliente no tiene planes asignados.
+          <p class="customer-description mb-0">
+            Abonado #{{ customer.subscriberNumber }}
           </p>
 
-        }
+        </div>
 
-        <p class="fs-5">
-          <strong>Total mensual:</strong>
-          {{ customer.monthlyAmount | currency:'ARS':'symbol-narrow':'1.2-2' }}
-        </p>
+        <div class="customer-status-box">
 
-        <p>
-          <strong>Estado:</strong>
+          <span class="customer-status-label">
+            Estado mensual
+          </span>
 
           @if (customer.monthlyDebt) {
-            <span class="badge text-bg-danger">
+            <span class="badge customer-badge-danger">
               Debe este mes
             </span>
           } @else {
-            <span class="badge text-bg-success">
+            <span class="badge customer-badge-success">
               Pagado este mes
             </span>
           }
-        </p>
 
-        <button
-          type="button"
-          class="btn btn-success mt-3"
-          [disabled]="!customer.monthlyDebt || customer.monthlyAmount === '0.00'"
-          (click)="payMonthlyFee()"
-        >
-          @if (customer.monthlyDebt) {
-            Pagar mensualidad
-          } @else {
-            Este mes ya está pagado
-          }
-        </button>
+        </div>
 
       </div>
 
-    </div>
+      <div class="row g-4 mt-1">
 
-  } @else {
+        <div class="col-12 col-xl-8">
 
-    <p>
-      Cargando cliente...
-    </p>
+          <div class="card app-card h-100">
 
-  }
+            <div class="card-body p-4">
+
+              <h2 class="customer-card-title mb-4">
+                Información general
+              </h2>
+
+              <div class="customer-info-grid">
+
+                <div class="customer-info-item">
+
+                  <span class="customer-info-label">
+                    Abonado
+                  </span>
+
+                  <strong>
+                    {{ customer.subscriberNumber }}
+                  </strong>
+
+                </div>
+
+                <div class="customer-info-item">
+
+                  <span class="customer-info-label">
+                    Email
+                  </span>
+
+                  <strong>
+                    {{ customer.email || '-' }}
+                  </strong>
+
+                </div>
+
+                <div class="customer-info-item">
+
+                  <span class="customer-info-label">
+                    Total mensual
+                  </span>
+
+                  <strong>
+                    {{ customer.monthlyAmount | currency:'ARS':'symbol-narrow':'1.2-2' }}
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="col-12 col-xl-4">
+
+          <div class="card app-card h-100">
+
+            <div class="card-body p-4 d-flex flex-column">
+
+              <h2 class="customer-card-title mb-2">
+                Mensualidad
+              </h2>
+
+              <p class="customer-muted mb-4">
+                Registrá el pago mensual del cliente cuando corresponda.
+              </p>
+
+              <div class="customer-amount mb-4">
+                {{ customer.monthlyAmount | currency:'ARS':'symbol-narrow':'1.2-2' }}
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-primary w-100 mt-auto"
+                [disabled]="!customer.monthlyDebt || customer.monthlyAmount === '0.00'"
+                (click)="payMonthlyFee()"
+              >
+                @if (customer.monthlyDebt) {
+                  Pagar mensualidad
+                } @else {
+                  Este mes ya está pagado
+                }
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="card app-card mt-4">
+
+        <div class="card-body p-4">
+
+          <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+
+              <h2 class="customer-card-title mb-1">
+                Planes asignados
+              </h2>
+
+              <p class="customer-muted mb-0">
+                Servicios activos o históricos asociados al cliente.
+              </p>
+
+            </div>
+
+          </div>
+
+          @if (customer.plans && customer.plans.length > 0) {
+
+            <div class="table-responsive">
+
+              <table class="table customer-table align-middle mb-0">
+
+                <thead>
+
+                  <tr>
+                    <th>Plan</th>
+                    <th>Descripción</th>
+                    <th>Precio mensual</th>
+                    <th>Estado</th>
+                  </tr>
+
+                </thead>
+
+                <tbody>
+
+                  @for (customerPlan of customer.plans; track customerPlan.id) {
+
+                    <tr>
+
+                      <td>
+                        <strong>
+                          {{ customerPlan.plan.name }}
+                        </strong>
+                      </td>
+
+                      <td>
+                        {{ customerPlan.plan.description || '-' }}
+                      </td>
+
+                      <td>
+                        {{ customerPlan.plan.monthlyPrice | currency:'ARS':'symbol-narrow':'1.2-2' }}
+                      </td>
+
+                      <td>
+                        @if (customerPlan.isActive && customerPlan.plan.isActive) {
+                          <span class="badge customer-badge-success">
+                            Activo
+                          </span>
+                        } @else {
+                          <span class="badge customer-badge-muted">
+                            Inactivo
+                          </span>
+                        }
+                      </td>
+
+                    </tr>
+
+                  }
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          } @else {
+
+            <div class="customer-empty-state">
+
+              <p class="mb-0">
+                Este cliente no tiene planes asignados.
+              </p>
+
+            </div>
+
+          }
+
+        </div>
+
+      </div>
+
+    } @else {
+
+      <div class="card app-card">
+
+        <div class="card-body p-4">
+
+          <p class="customer-muted mb-0">
+            Cargando cliente...
+          </p>
+
+        </div>
+
+      </div>
+
+    }
+
+  </div>
 
 </div>
