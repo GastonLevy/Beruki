@@ -14,7 +14,7 @@ class CustomerPayment
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(inversedBy: 'customerPayments')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Customer $customer = null;
 
