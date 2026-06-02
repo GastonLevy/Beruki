@@ -28,7 +28,6 @@ class Plan
     #[ORM\Column]
     private ?bool $isActive = null;
 
-
     /**
      * @var Collection<int, CustomerPlan>
      */
@@ -125,5 +124,10 @@ class Plan
         }
 
         return $this;
+    }
+
+    public function hasCustomerPlans(): bool
+    {
+        return !$this->customerPlans->isEmpty();
     }
 }
