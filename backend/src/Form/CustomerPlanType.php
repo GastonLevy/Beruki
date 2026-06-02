@@ -43,6 +43,10 @@ class CustomerPlanType extends AbstractType
                 'class' => Plan::class,
                 'choice_label' => 'name',
                 'label' => 'Plan',
+                'query_builder' => fn ($repository) => $repository
+                    ->createQueryBuilder('p')
+                    ->andWhere('p.isActive = :isActive')
+                    ->setParameter('isActive', true),
             ])
             ->add('startedAt', DateTimeType::class, [
                 'label' => 'Fecha de inicio',

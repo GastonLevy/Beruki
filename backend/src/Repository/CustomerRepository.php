@@ -23,6 +23,10 @@ class CustomerRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->createQueryBuilder('c');
 
+        $qb
+            ->andWhere('c.isArchived = :isArchived')
+            ->setParameter('isArchived', false);
+
         if ($search !== '') {
             $qb
                 ->andWhere('
@@ -52,5 +56,23 @@ class CustomerRepository extends ServiceEntityRepository
             'data' => $data,
             'total' => (int) $total,
         ];
+    }
+
+    public function findActiveById(int $id): ?Customer
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.id = :id')
+            ->andWhere('c.isArchived = :isArchived')
+            ->setParameter('id', $id)
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findActiveOneBy(array $criteria): ?Customer
+    {
+        $criteria['isArchived'] = false;
+
+        return $this->findOneBy($criteria);
     }
 }
