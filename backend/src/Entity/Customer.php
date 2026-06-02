@@ -5,7 +5,6 @@ namespace App\Entity;
 use App\Repository\CustomerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CustomerRepository::class)]
@@ -25,11 +24,11 @@ class Customer
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $email = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true)]
-    private ?string $monthlyAmount = null;
-
     #[ORM\Column(nullable: true)]
     private ?bool $monthlyDebt = null;
+
+    #[ORM\Column]
+    private bool $isArchived = false;
 
     /**
      * @var Collection<int, CustomerPlan>
@@ -42,9 +41,19 @@ class Customer
     )]
     private Collection $customerPlans;
 
+    /**
+     * @var Collection<int, CustomerPayment>
+     */
+    #[ORM\OneToMany(
+        targetEntity: CustomerPayment::class,
+        mappedBy: 'customer'
+    )]
+    private Collection $customerPayments;
+
     public function __construct()
     {
         $this->customerPlans = new ArrayCollection();
+        $this->customerPayments = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -93,18 +102,6 @@ class Customer
         return $this;
     }
 
-    public function getMonthlyAmount(): ?string
-    {
-        return $this->monthlyAmount;
-    }
-
-    public function setMonthlyAmount(?string $monthlyAmount): static
-    {
-        $this->monthlyAmount = $monthlyAmount;
-
-        return $this;
-    }
-
     public function isMonthlyDebt(): ?bool
     {
         return $this->monthlyDebt;
@@ -113,6 +110,18 @@ class Customer
     public function setMonthlyDebt(?bool $monthlyDebt): static
     {
         $this->monthlyDebt = $monthlyDebt;
+
+        return $this;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->isArchived;
+    }
+
+    public function setIsArchived(bool $isArchived): static
+    {
+        $this->isArchived = $isArchived;
 
         return $this;
     }
@@ -144,5 +153,40 @@ class Customer
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, CustomerPayment>
+     */
+    public function getCustomerPayments(): Collection
+    {
+        return $this->customerPayments;
+    }
+
+    public function hasRelations(): bool
+    {
+        return !$this->customerPlans->isEmpty()
+            || !$this->customerPayments->isEmpty();
+    }
+
+    public function getMonthlyAmount(): string
+    {
+        $total = 0.0;
+
+        foreach ($this->customerPlans as $customerPlan) {
+            if (!$customerPlan->isActive()) {
+                continue;
+            }
+
+            $plan = $customerPlan->getPlan();
+
+            if ($plan === null) {
+                continue;
+            }
+
+            $total += (float) $plan->getMonthlyPrice();
+        }
+
+        return number_format($total, 2, '.', '');
     }
 }
