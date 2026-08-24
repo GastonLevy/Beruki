@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20260530161632 extends AbstractMigration
+final class Version20260602130627 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -20,12 +20,12 @@ final class Version20260530161632 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE user ADD commission_percentage NUMERIC(5, 2) NOT NULL');
+        $this->addSql('ALTER TABLE customer ADD is_archived TINYINT NOT NULL, DROP monthly_amount');
     }
 
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE user DROP commission_percentage');
+        $this->addSql('ALTER TABLE customer ADD monthly_amount NUMERIC(10, 2) DEFAULT NULL, DROP is_archived');
     }
 }

@@ -64,6 +64,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": [
+              "cobranzas.alsina-telecomunicaciones.com"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "beruki:build:production"
