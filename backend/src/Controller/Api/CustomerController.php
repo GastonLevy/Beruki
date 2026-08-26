@@ -5,7 +5,6 @@ namespace App\Controller\Api;
 use App\Entity\Customer;
 use App\Entity\CustomerPayment;
 use App\Entity\User;
-use App\Repository\CustomerPaymentRepository;
 use App\Repository\CustomerRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -66,7 +65,6 @@ final class CustomerController extends AbstractController
     public function createPayment(
         int $id,
         CustomerRepository $customerRepository,
-        CustomerPaymentRepository $customerPaymentRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
         $customer = $customerRepository->find($id);
@@ -85,9 +83,9 @@ final class CustomerController extends AbstractController
             ], 401);
         }
 
-        if ($customerPaymentRepository->hasPaymentForCurrentMonth($customer->getId())) {
+        if ($customer->isMonthlyDebt() !== true) {
             return $this->json([
-                'message' => 'Customer already paid this month',
+                'message' => 'Customer has no monthly debt',
             ], 409);
         }
 
