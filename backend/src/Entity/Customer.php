@@ -10,12 +10,17 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: CustomerRepository::class)]
 class Customer
 {
+    private const CUSTOMER_CODE_PATTERN = '/^\d[a-z]\d[a-z]\d[a-z]\d[a-z]$/';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 8, unique: true)]
+    private ?string $customerCode = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $fullName = null;
 
     #[ORM\Column(length: 100, nullable: true)]
@@ -50,10 +55,22 @@ class Customer
     )]
     private Collection $customerPayments;
 
+    /**
+     * @var Collection<int, CustomerConnection>
+     */
+    #[ORM\OneToMany(
+        targetEntity: CustomerConnection::class,
+        mappedBy: 'customer',
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
+    private Collection $customerConnections;
+
     public function __construct()
     {
         $this->customerPlans = new ArrayCollection();
         $this->customerPayments = new ArrayCollection();
+        $this->customerConnections = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -66,12 +83,32 @@ class Customer
         return $this->id;
     }
 
+    public function getCustomerCode(): ?string
+    {
+        return $this->customerCode;
+    }
+
+    public function assignCustomerCode(string $customerCode): static
+    {
+        if (!preg_match(self::CUSTOMER_CODE_PATTERN, $customerCode)) {
+            throw new \InvalidArgumentException('Customer code must match the expected public format.');
+        }
+
+        if ($this->customerCode !== null && $this->customerCode !== $customerCode) {
+            throw new \LogicException('Customer code cannot be changed after it is assigned.');
+        }
+
+        $this->customerCode = $customerCode;
+
+        return $this;
+    }
+
     public function getFullName(): ?string
     {
         return $this->fullName;
     }
 
-    public function setFullName(string $fullName): static
+    public function setFullName(?string $fullName): static
     {
         $this->fullName = $fullName;
 
@@ -163,10 +200,40 @@ class Customer
         return $this->customerPayments;
     }
 
+    /**
+     * @return Collection<int, CustomerConnection>
+     */
+    public function getCustomerConnections(): Collection
+    {
+        return $this->customerConnections;
+    }
+
+    public function addCustomerConnection(CustomerConnection $customerConnection): static
+    {
+        if (!$this->customerConnections->contains($customerConnection)) {
+            $this->customerConnections->add($customerConnection);
+            $customerConnection->setCustomer($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCustomerConnection(CustomerConnection $customerConnection): static
+    {
+        if ($this->customerConnections->removeElement($customerConnection)) {
+            if ($customerConnection->getCustomer() === $this) {
+                $customerConnection->setCustomer(null);
+            }
+        }
+
+        return $this;
+    }
+
     public function hasRelations(): bool
     {
         return !$this->customerPlans->isEmpty()
-            || !$this->customerPayments->isEmpty();
+            || !$this->customerPayments->isEmpty()
+            || !$this->customerConnections->isEmpty();
     }
 
     public function getMonthlyAmount(): string

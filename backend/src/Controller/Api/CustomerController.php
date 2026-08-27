@@ -45,12 +45,17 @@ final class CustomerController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'api_customers_show', methods: ['GET'])]
+    #[Route(
+        '/{customerCode}',
+        name: 'api_customers_show',
+        requirements: ['customerCode' => '\d[a-z]\d[a-z]\d[a-z]\d[a-z]'],
+        methods: ['GET']
+    )]
     public function show(
-        int $id,
+        string $customerCode,
         CustomerRepository $customerRepository
     ): JsonResponse {
-        $customer = $customerRepository->find($id);
+        $customer = $customerRepository->findActiveByCustomerCode($customerCode);
 
         if (!$customer instanceof Customer) {
             return $this->json([
@@ -61,13 +66,18 @@ final class CustomerController extends AbstractController
         return $this->json($this->serializeCustomer($customer));
     }
 
-    #[Route('/{id}/payments', name: 'api_customers_payments_create', methods: ['POST'])]
+    #[Route(
+        '/{customerCode}/payments',
+        name: 'api_customers_payments_create',
+        requirements: ['customerCode' => '\d[a-z]\d[a-z]\d[a-z]\d[a-z]'],
+        methods: ['POST']
+    )]
     public function createPayment(
-        int $id,
+        string $customerCode,
         CustomerRepository $customerRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
-        $customer = $customerRepository->find($id);
+        $customer = $customerRepository->findActiveByCustomerCode($customerCode);
 
         if (!$customer instanceof Customer) {
             return $this->json([
@@ -110,7 +120,7 @@ final class CustomerController extends AbstractController
 
         return $this->json([
             'id' => $payment->getId(),
-            'customerId' => $customer->getId(),
+            'customerCode' => $customer->getCustomerCode(),
             'userId' => $user->getId(),
             'amount' => $payment->getAmount(),
             'paidAt' => $payment->getPaidAt()?->format('Y-m-d H:i:s'),
@@ -122,7 +132,7 @@ final class CustomerController extends AbstractController
         $activePlansTotal = $this->getCustomerActivePlansTotal($customer);
 
         return [
-            'id' => $customer->getId(),
+            'customerCode' => $customer->getCustomerCode(),
             'fullName' => $customer->getFullName(),
             'subscriberNumber' => $customer->getSubscriberNumber(),
             'email' => $customer->getEmail(),

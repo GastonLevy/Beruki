@@ -33,6 +33,7 @@ class CustomerRepository extends ServiceEntityRepository
                     c.fullName LIKE :search
                     OR c.email LIKE :search
                     OR c.subscriberNumber LIKE :search
+                    OR c.customerCode LIKE :search
                 ')
                 ->setParameter(
                     'search',
@@ -67,6 +68,27 @@ class CustomerRepository extends ServiceEntityRepository
             ->setParameter('isArchived', false)
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function findActiveByCustomerCode(string $customerCode): ?Customer
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.customerCode = :customerCode')
+            ->andWhere('c.isArchived = :isArchived')
+            ->setParameter('customerCode', $customerCode)
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOneByCustomerCode(string $customerCode): ?Customer
+    {
+        return $this->findOneBy(['customerCode' => $customerCode]);
+    }
+
+    public function existsByCustomerCode(string $customerCode): bool
+    {
+        return $this->findOneByCustomerCode($customerCode) instanceof Customer;
     }
 
     public function findActiveOneBy(array $criteria): ?Customer
