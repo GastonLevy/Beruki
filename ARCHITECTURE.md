@@ -20,6 +20,12 @@ Changes should stay small and focused. Avoid unrelated refactors, duplicated log
 
 `Customer` contains customer/person/subscriber data only. Technical network data does not belong to `Customer`.
 
+## Plans
+
+`Plan.name` is a visible commercial name and may be edited by administrators.
+
+`Plan.mikrotikRateKey` is an optional technical key for plans discovered from MikroTik queues. It stores the normalized Beruki speed identity as `download/upload`, for example `100/50`, and is unique when present. MikroTik imports must resolve imported plans by this technical key, not by the editable visible name.
+
 ## Customer Connections
 
 `CustomerConnection` represents a technical connection owned by a customer. A customer may have zero, one, or many connections. Initial connection data includes nullable unique `serviceIp`, nullable `macAddress`, active state, and creation time.
@@ -38,11 +44,43 @@ The initial import should create or match customers and connections idempotently
 MikroTik /queue simple
         -> target
         -> CustomerConnection.serviceIp
+        -> max-limit
+        -> Plan.mikrotikRateKey
+        -> CustomerPlan
 ```
 
 It should use `queue.target` as `CustomerConnection.serviceIp` after removing `/32`, avoid duplicates by looking up `CustomerConnection` by `serviceIp`, leave `Customer.fullName = null`, ignore `queue.name`, and reuse existing customer creation services, including `CustomerCodeGenerator`.
 
+RouterOS exposes `max-limit` as `upload/download`. Beruki presents imported plan speeds as `download/upload`, without the `M` suffix when values are expressed in megabits. For example, `max-limit=50M/100M` becomes `Plan.mikrotikRateKey = "100/50"` and an initial visible `Plan.name = "100/50"`. The visible name may later become something like `Fibra Hogar 100`; future MikroTik sync must still use `mikrotikRateKey`.
+
 MikroTik credentials and connection details must come from configuration or environment variables. Do not hardcode IP addresses, usernames, passwords, or ports. Future synchronization must not modify MikroTik unless a task explicitly asks for write behavior.
+
+Use a dedicated RouterOS user with minimum read-only permissions in production. The import command is:
+
+```bash
+php bin/console app:mikrotik:import-customers --dry-run
+php bin/console app:mikrotik:import-customers
+```
+
+Dry-run connects to MikroTik, reads `/queue simple`, normalizes targets and `max-limit`, checks existing `CustomerConnection.serviceIp` values, resolves imported plans, and reports statistics without persisting `Customer`, `CustomerConnection`, `Plan`, or `CustomerPlan` records.
+
+Required environment variables:
+
+```text
+MIKROTIK_HOST
+MIKROTIK_PORT
+MIKROTIK_USER
+MIKROTIK_PASSWORD
+```
+
+Optional timeout/retry variables:
+
+```text
+MIKROTIK_TIMEOUT
+MIKROTIK_SOCKET_TIMEOUT
+MIKROTIK_ATTEMPTS
+MIKROTIK_RETRY_DELAY
+```
 
 ## Git Flow
 
