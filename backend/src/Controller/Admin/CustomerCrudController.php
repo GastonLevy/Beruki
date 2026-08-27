@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Customer;
 use App\Form\CustomerPlanType;
+use App\Service\CustomerCodeGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
@@ -30,6 +31,7 @@ class CustomerCrudController extends AbstractCrudController
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly RequestStack $requestStack,
+        private readonly CustomerCodeGenerator $customerCodeGenerator,
     ) {
     }
 
@@ -160,13 +162,26 @@ class CustomerCrudController extends AbstractCrudController
         return $queryBuilder;
     }
 
+    public function persistEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        if ($entityInstance instanceof Customer && $entityInstance->getCustomerCode() === null) {
+            $entityInstance->assignCustomerCode($this->customerCodeGenerator->generateUnique());
+        }
+
+        parent::persistEntity($entityManager, $entityInstance);
+    }
+
     public function configureFields(string $pageName): iterable
     {
         return [
             IdField::new('id')
                 ->hideOnForm(),
 
-            TextField::new('fullName', 'Nombre'),
+            TextField::new('customerCode', 'Codigo publico')
+                ->hideOnForm(),
+
+            TextField::new('fullName', 'Nombre')
+                ->setRequired(false),
 
             TextField::new('subscriberNumber', 'Número de abonado'),
 

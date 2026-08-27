@@ -30,7 +30,7 @@ export const routes: Routes = [
         .then(m => m.Customers)
   },
   {
-    path: 'customers/:id',
+    path: 'customers/:customerCode',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./features/customers/pages/customer-detail/customer-detail')

@@ -20,11 +20,11 @@
         <div>
 
           <h1 class="customer-title mb-2">
-            {{ customer.fullName }}
+            {{ customer.fullName || customer.customerCode }}
           </h1>
 
           <p class="customer-description mb-0">
-            Abonado #{{ customer.subscriberNumber }}
+            Codigo {{ customer.customerCode }}
           </p>
 
         </div>
@@ -66,11 +66,23 @@
                 <div class="customer-info-item">
 
                   <span class="customer-info-label">
+                    Codigo
+                  </span>
+
+                  <strong>
+                    {{ customer.customerCode }}
+                  </strong>
+
+                </div>
+
+                <div class="customer-info-item">
+
+                  <span class="customer-info-label">
                     Abonado
                   </span>
 
                   <strong>
-                    {{ customer.subscriberNumber }}
+                    {{ customer.subscriberNumber || '-' }}
                   </strong>
 
                 </div>
