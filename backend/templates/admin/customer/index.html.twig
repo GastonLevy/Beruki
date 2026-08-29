@@ -1,0 +1,115 @@
+{% extends '@EasyAdmin/crud/index.html.twig' %}
+
+{% block main %}
+    {{ parent() }}
+
+    <div
+        class="modal fade"
+        id="monthly-debt-generation-modal"
+        tabindex="-1"
+        aria-labelledby="monthly-debt-generation-title"
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form
+                    method="post"
+                    action="{{ ea_url().setController(ea.request.attributes.get('crudControllerFqcn')).setAction('generateMonthlyDebt') }}"
+                    data-monthly-debt-generation-form
+                >
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="monthly-debt-generation-title">
+                            Generar deuda mensual para todos
+                        </h5>
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"
+                        ></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p class="mb-0">
+                            Esta accion marcara a todos los clientes activos como "Debe mes". Los cobradores podran registrar el cobro mensual de cada cliente. No se crearan pagos ni se modificaran planes.
+                        </p>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button
+                            type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal"
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="btn btn-danger"
+                            data-monthly-debt-generation-confirm
+                            disabled
+                        >
+                            Confirmar en 5 segundos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block body_javascript %}
+    {{ parent() }}
+
+    <script>
+        (() => {
+            const modal = document.getElementById('monthly-debt-generation-modal');
+
+            if (!modal) {
+                return;
+            }
+
+            const form = modal.querySelector('[data-monthly-debt-generation-form]');
+            const confirmButton = modal.querySelector('[data-monthly-debt-generation-confirm]');
+            let countdownInterval;
+
+            const resetCountdown = () => {
+                window.clearInterval(countdownInterval);
+                confirmButton.disabled = true;
+                confirmButton.textContent = 'Confirmar en 5 segundos';
+            };
+
+            modal.addEventListener('shown.bs.modal', () => {
+                let remainingSeconds = 5;
+
+                resetCountdown();
+
+                countdownInterval = window.setInterval(() => {
+                    remainingSeconds -= 1;
+
+                    if (remainingSeconds > 0) {
+                        confirmButton.textContent = `Confirmar en ${remainingSeconds} segundos`;
+                        return;
+                    }
+
+                    window.clearInterval(countdownInterval);
+                    confirmButton.disabled = false;
+                    confirmButton.textContent = 'Generar deuda mensual';
+                }, 1000);
+            });
+
+            modal.addEventListener('hidden.bs.modal', resetCountdown);
+
+            form.addEventListener('submit', (event) => {
+                if (confirmButton.disabled) {
+                    event.preventDefault();
+                    return;
+                }
+
+                confirmButton.disabled = true;
+            });
+        })();
+    </script>
+{% endblock %}

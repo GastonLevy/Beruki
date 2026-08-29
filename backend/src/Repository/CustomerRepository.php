@@ -97,4 +97,39 @@ class CustomerRepository extends ServiceEntityRepository
 
         return $this->findOneBy($criteria);
     }
+
+    public function countActive(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.isArchived = :isArchived')
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countActiveWithMonthlyDebt(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.isArchived = :isArchived')
+            ->andWhere('c.monthlyDebt = :monthlyDebt')
+            ->setParameter('isArchived', false)
+            ->setParameter('monthlyDebt', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function activateMonthlyDebtForActiveWithoutDebt(): int
+    {
+        return $this->createQueryBuilder('c')
+            ->update()
+            ->set('c.monthlyDebt', ':monthlyDebt')
+            ->andWhere('c.isArchived = :isArchived')
+            ->andWhere('(c.monthlyDebt != :monthlyDebt OR c.monthlyDebt IS NULL)')
+            ->setParameter('monthlyDebt', true)
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->execute();
+    }
 }
