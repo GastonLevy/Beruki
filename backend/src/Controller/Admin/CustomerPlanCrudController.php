@@ -14,6 +14,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 class CustomerPlanCrudController extends AbstractCrudController
 {
@@ -72,6 +73,14 @@ class CustomerPlanCrudController extends AbstractCrudController
             DateTimeField::new('startedAt', 'Fecha de inicio'),
 
             BooleanField::new('isActive', 'Activo'),
+
+            TextField::new('serviceIp', 'IP de servicio')
+                ->setRequired(false)
+                ->formatValue(static fn (?string $value): string => $value ?: '—'),
+
+            TextField::new('macAddress', 'Dirección MAC')
+                ->setRequired(false)
+                ->formatValue(static fn (?string $value): string => $value ?: '—'),
         ];
     }
 }

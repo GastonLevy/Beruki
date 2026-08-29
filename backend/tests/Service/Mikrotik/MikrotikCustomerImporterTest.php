@@ -3,10 +3,8 @@
 namespace App\Tests\Service\Mikrotik;
 
 use App\Entity\Customer;
-use App\Entity\CustomerConnection;
 use App\Entity\CustomerPlan;
 use App\Entity\Plan;
-use App\Repository\CustomerConnectionRepository;
 use App\Repository\CustomerPlanRepository;
 use App\Repository\CustomerRepository;
 use App\Repository\PlanRepository;
@@ -20,266 +18,194 @@ use PHPUnit\Framework\TestCase;
 
 final class MikrotikCustomerImporterTest extends TestCase
 {
-    public function testDuplicateServiceIpIsSkipped(): void
+    public function testExistingConnectionByIpWithoutMacGetsMacCompleted(): void
     {
-        $connectionRepository = $this->createMock(CustomerConnectionRepository::class);
-        $connectionRepository
-            ->method('findOneByServiceIp')
-            ->with('10.10.9.67')
-            ->willReturn($this->createConnectionWithCustomer());
+        $plan = $this->createImportedPlan('100/50');
+        $customerPlan = $this->createCustomerPlanWithCustomer($plan, '10.10.9.67');
+        $entityManager = $this->createTransactionalEntityManager();
 
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager->expects(self::never())->method('persist');
-        $entityManager->expects(self::never())->method('flush');
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository($customerPlan),
+            $entityManager,
+            [$plan]
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.67', false, '100/50', 'aa:bb:cc:dd:ee:ff'),
+        ], 0));
 
-        $result = $this->createImporter($connectionRepository, $entityManager)
-            ->import(new MikrotikQueueReadResult(1, [$this->queue('10.10.9.67')], 0), true);
-
-        self::assertSame(0, $result->created);
         self::assertSame(1, $result->existing);
+        self::assertSame(0, $result->created);
+        self::assertSame(0, $result->customerPlansToCreate);
+        self::assertSame(0, $result->ipAddressesToUpdate);
+        self::assertSame(0, $result->plansToUpdate);
+        self::assertSame(1, $result->macAddressesFound);
+        self::assertSame(1, $result->macAddressesToComplete);
+        self::assertSame(0, $result->macAddressesToUpdate);
+        self::assertSame('aa:bb:cc:dd:ee:ff', $customerPlan->getMacAddress());
     }
 
-    public function testDryRunDoesNotPersist(): void
+    public function testExistingConnectionByIpWithDifferentMacGetsCurrentMac(): void
     {
-        $connectionRepository = $this->createEmptyConnectionRepository();
+        $plan = $this->createImportedPlan('100/50');
+        $customerPlan = $this->createCustomerPlanWithCustomer($plan, '10.10.9.67', '11:22:33:44:55:66');
+        $entityManager = $this->createTransactionalEntityManager();
+
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository($customerPlan),
+            $entityManager,
+            [$plan]
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.67', false, '100/50', 'aa:bb:cc:dd:ee:ff'),
+        ], 0));
+
+        self::assertSame(0, $result->ipAddressesToUpdate);
+        self::assertSame(0, $result->plansToUpdate);
+        self::assertSame(1, $result->macAddressesFound);
+        self::assertSame(0, $result->macAddressesToComplete);
+        self::assertSame(1, $result->macAddressesToUpdate);
+        self::assertSame('aa:bb:cc:dd:ee:ff', $customerPlan->getMacAddress());
+    }
+
+    public function testExistingConnectionByIpWithoutMikrotikMacKeepsStoredMac(): void
+    {
+        $plan = $this->createImportedPlan('100/50');
+        $customerPlan = $this->createCustomerPlanWithCustomer($plan, '10.10.9.67', '11:22:33:44:55:66');
+        $entityManager = $this->createTransactionalEntityManager();
+
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository($customerPlan),
+            $entityManager,
+            [$plan]
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.67'),
+        ], 0));
+
+        self::assertSame(0, $result->ipAddressesToUpdate);
+        self::assertSame(0, $result->plansToUpdate);
+        self::assertSame(0, $result->macAddressesFound);
+        self::assertSame(0, $result->macAddressesToComplete);
+        self::assertSame(0, $result->macAddressesToUpdate);
+        self::assertSame('11:22:33:44:55:66', $customerPlan->getMacAddress());
+    }
+
+    public function testConnectionFoundByMacGetsNewIpAndSyncedFields(): void
+    {
+        $oldPlan = $this->createImportedPlan('100/50');
+        $newPlan = $this->createImportedPlan('200/100');
+        $customerPlan = $this->createCustomerPlanWithCustomer($oldPlan, '10.10.9.67', 'aa:bb:cc:dd:ee:ff');
+        $entityManager = $this->createTransactionalEntityManager();
+
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository(null, $customerPlan),
+            $entityManager,
+            [$oldPlan, $newPlan]
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.99', true, '200/100', 'aa:bb:cc:dd:ee:ff'),
+        ], 0));
+
+        self::assertSame(1, $result->existing);
+        self::assertSame(1, $result->ipAddressesToUpdate);
+        self::assertSame(1, $result->plansToUpdate);
+        self::assertSame('10.10.9.99', $customerPlan->getServiceIp());
+        self::assertSame($newPlan, $customerPlan->getPlan());
+        self::assertFalse($customerPlan->isActive());
+    }
+
+    public function testCreatesCustomerAndConnectionWhenIpAndMacAreNew(): void
+    {
+        $persistedCustomers = [];
+        $persistedCustomerPlans = [];
+        $plan = $this->createImportedPlan('100/50');
+        $entityManager = $this->createTransactionalEntityManager($persistedCustomers, $persistedCustomerPlans);
+        $customerRepository = $this->createMock(CustomerRepository::class);
+        $customerRepository
+            ->method('existsByCustomerCode')
+            ->willReturn(false);
+
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository(),
+            $entityManager,
+            [$plan],
+            $customerRepository
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.67', false, '100/50', 'aa:bb:cc:dd:ee:ff'),
+        ], 0));
+
+        self::assertSame(1, $result->created);
+        self::assertSame(0, $result->existing);
+        self::assertSame(1, $result->customerPlansToCreate);
+        self::assertSame(0, $result->ipAddressesToUpdate);
+        self::assertSame(0, $result->plansToUpdate);
+        self::assertSame(1, $result->macAddressesFound);
+        self::assertSame(0, $result->macAddressesToComplete);
+        self::assertSame(0, $result->macAddressesToUpdate);
+        self::assertCount(1, $persistedCustomers);
+        self::assertCount(1, $persistedCustomerPlans);
+        self::assertSame('10.10.9.67', $persistedCustomerPlans[0]->getServiceIp());
+        self::assertSame('aa:bb:cc:dd:ee:ff', $persistedCustomerPlans[0]->getMacAddress());
+        self::assertSame($plan, $persistedCustomerPlans[0]->getPlan());
+    }
+
+    public function testIpAndMacPointingToDifferentConnectionsAreReportedAsConflict(): void
+    {
+        $plan = $this->createImportedPlan('100/50');
+        $planByIp = $this->createCustomerPlanWithCustomer($plan, '10.10.9.67', '11:22:33:44:55:66');
+        $planByMac = $this->createCustomerPlanWithCustomer($plan, '10.10.9.99', 'aa:bb:cc:dd:ee:ff');
+        $entityManager = $this->createTransactionalEntityManager();
+        $entityManager->expects(self::never())->method('persist');
+
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository($planByIp, $planByMac),
+            $entityManager,
+            [$plan]
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.67', false, '100/50', 'aa:bb:cc:dd:ee:ff'),
+        ], 0));
+
+        self::assertSame(1, $result->ambiguous);
+        self::assertSame(0, $result->existing);
+        self::assertSame(0, $result->ipAddressesToUpdate);
+        self::assertSame(0, $result->plansToUpdate);
+        self::assertSame(1, $result->macAddressesFound);
+        self::assertSame(0, $result->macAddressesToComplete);
+        self::assertSame(0, $result->macAddressesToUpdate);
+        self::assertSame('11:22:33:44:55:66', $planByIp->getMacAddress());
+        self::assertSame('10.10.9.99', $planByMac->getServiceIp());
+    }
+
+    public function testDryRunDoesNotPersistOrModifyExistingConnection(): void
+    {
+        $oldPlan = $this->createImportedPlan('100/50');
+        $newPlan = $this->createImportedPlan('200/100');
+        $customerPlan = $this->createCustomerPlanWithCustomer($oldPlan, '10.10.9.67', '11:22:33:44:55:66');
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects(self::never())->method('persist');
         $entityManager->expects(self::never())->method('flush');
         $entityManager->expects(self::never())->method('wrapInTransaction');
 
-        $result = $this->createImporter($connectionRepository, $entityManager)
-            ->import(new MikrotikQueueReadResult(1, [$this->queue('10.10.9.67')], 0), true);
+        $result = $this->createImporter(
+            $this->createCustomerPlanRepository($customerPlan),
+            $entityManager,
+            [$oldPlan, $newPlan]
+        )->import(new MikrotikQueueReadResult(1, [
+            $this->queue('10.10.9.67', true, '200/100', 'aa:bb:cc:dd:ee:ff'),
+        ], 0), true);
 
         self::assertTrue($result->dryRun);
-        self::assertSame(1, $result->created);
-        self::assertSame(0, $result->existing);
-        self::assertSame(1, $result->newPlans);
-        self::assertSame(1, $result->customerPlansToCreate);
-    }
-
-    public function testCreatesActiveAndDisabledConnectionsWithNullCustomerNameAndCustomerPlans(): void
-    {
-        $persistedCustomers = [];
-        $persistedConnections = [];
-        $persistedPlans = [];
-        $persistedCustomerPlans = [];
-        $customerRepository = $this->createMock(CustomerRepository::class);
-        $customerRepository
-            ->expects(self::atLeastOnce())
-            ->method('existsByCustomerCode')
-            ->willReturn(false);
-
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager
-            ->method('persist')
-            ->willReturnCallback(function (object $entity) use (&$persistedCustomers, &$persistedConnections, &$persistedPlans, &$persistedCustomerPlans): void {
-                if ($entity instanceof Customer) {
-                    $persistedCustomers[] = $entity;
-                }
-
-                if ($entity instanceof CustomerConnection) {
-                    $persistedConnections[] = $entity;
-                }
-
-                if ($entity instanceof Plan) {
-                    $persistedPlans[] = $entity;
-                }
-
-                if ($entity instanceof CustomerPlan) {
-                    $persistedCustomerPlans[] = $entity;
-                }
-            });
-        $entityManager
-            ->method('wrapInTransaction')
-            ->willReturnCallback(static function (callable $work): void {
-                $work();
-            });
-
-        $result = $this->createImporter($this->createEmptyConnectionRepository(), $entityManager, $customerRepository)
-            ->import(new MikrotikQueueReadResult(2, [
-                $this->queue('10.10.9.67', false, '100/50'),
-                $this->queue('10.10.9.68', true, '100/50'),
-            ], 0));
-
-        self::assertSame(2, $result->created);
-        self::assertSame(1, $result->newPlans);
-        self::assertSame(2, $result->customerPlansToCreate);
-        self::assertCount(2, $persistedCustomers);
-        self::assertCount(2, $persistedConnections);
-        self::assertCount(1, $persistedPlans);
-        self::assertCount(2, $persistedCustomerPlans);
-        self::assertNull($persistedCustomers[0]->getFullName());
-        self::assertMatchesRegularExpression('/^\d[a-z]\d[a-z]\d[a-z]\d[a-z]$/', $persistedCustomers[0]->getCustomerCode());
-        self::assertTrue($persistedConnections[0]->isActive());
-        self::assertFalse($persistedConnections[1]->isActive());
-        self::assertSame($persistedCustomers[0], $persistedConnections[0]->getCustomer());
-        self::assertSame('100/50', $persistedPlans[0]->getName());
-        self::assertSame('100/50', $persistedPlans[0]->getMikrotikRateKey());
-        self::assertSame($persistedPlans[0], $persistedCustomerPlans[0]->getPlan());
-        self::assertSame($persistedCustomers[0], $persistedCustomerPlans[0]->getCustomer());
-    }
-
-    public function testExistingPlanIsReusedByTechnicalKeyEvenWhenVisibleNameChanged(): void
-    {
-        $plan = (new Plan())
-            ->setName('Fibra Hogar 100')
-            ->setMikrotikRateKey('100/50')
-            ->setMonthlyPrice('123.45')
-            ->setIsActive(true);
-
-        $persistedPlans = [];
-        $entityManager = $this->createEntityManagerCapturingPersistedPlans($persistedPlans);
-
-        $result = $this->createImporter(
-            $this->createEmptyConnectionRepository(),
-            $entityManager,
-            null,
-            [$plan]
-        )->import(new MikrotikQueueReadResult(1, [$this->queue('10.10.9.67')], 0));
-
-        self::assertSame(0, $result->newPlans);
-        self::assertSame(1, $result->existingPlans);
-        self::assertSame([], $persistedPlans);
-    }
-
-    public function testExistingConnectionGetsMissingCustomerPlanWithoutDuplicateCustomer(): void
-    {
-        $persistedCustomers = [];
-        $persistedCustomerPlans = [];
-        $connectionRepository = $this->createMock(CustomerConnectionRepository::class);
-        $connectionRepository
-            ->method('findOneByServiceIp')
-            ->willReturn($this->createConnectionWithCustomer());
-
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager
-            ->method('persist')
-            ->willReturnCallback(function (object $entity) use (&$persistedCustomers, &$persistedCustomerPlans): void {
-                if ($entity instanceof Customer) {
-                    $persistedCustomers[] = $entity;
-                }
-
-                if ($entity instanceof CustomerPlan) {
-                    $persistedCustomerPlans[] = $entity;
-                }
-            });
-        $entityManager
-            ->method('wrapInTransaction')
-            ->willReturnCallback(static function (callable $work): void {
-                $work();
-            });
-
-        $result = $this->createImporter($connectionRepository, $entityManager)
-            ->import(new MikrotikQueueReadResult(1, [$this->queue('10.10.9.67')], 0));
-
-        self::assertSame(0, $result->created);
-        self::assertSame(1, $result->existing);
-        self::assertSame(1, $result->customerPlansToCreate);
-        self::assertCount(0, $persistedCustomers);
-        self::assertCount(1, $persistedCustomerPlans);
-    }
-
-    public function testDoesNotDuplicateExistingActiveCustomerPlan(): void
-    {
-        $customer = new Customer();
-        $connection = new CustomerConnection();
-        $connection->setCustomer($customer);
-
-        $existingCustomerPlan = new CustomerPlan();
-        $existingPlan = (new Plan())
-            ->setName('Fibra Hogar 100')
-            ->setMikrotikRateKey('100/50')
-            ->setMonthlyPrice('0.00')
-            ->setIsActive(true);
-
-        $connectionRepository = $this->createMock(CustomerConnectionRepository::class);
-        $connectionRepository
-            ->method('findOneByServiceIp')
-            ->willReturn($connection);
-
-        $customerPlanRepository = $this->createMock(CustomerPlanRepository::class);
-        $customerPlanRepository
-            ->method('findActiveOneByCustomerAndMikrotikRateKey')
-            ->willReturn($existingCustomerPlan);
-
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager->expects(self::never())->method('persist');
-        $entityManager
-            ->method('wrapInTransaction')
-            ->willReturnCallback(static function (callable $work): void {
-                $work();
-            });
-
-        $result = $this->createImporter(
-            $connectionRepository,
-            $entityManager,
-            null,
-            [$existingPlan],
-            $customerPlanRepository
-        )->import(new MikrotikQueueReadResult(1, [$this->queue('10.10.9.67')], 0));
-
-        self::assertSame(0, $result->customerPlansToCreate);
-    }
-
-    public function testSpeedChangeDeactivatesPreviousImportedPlanAndCreatesNewCustomerPlan(): void
-    {
-        $customer = new Customer();
-        $connection = new CustomerConnection();
-        $connection->setCustomer($customer);
-        $oldPlan = (new Plan())
-            ->setName('100/50')
-            ->setMikrotikRateKey('100/50')
-            ->setMonthlyPrice('0.00')
-            ->setIsActive(true);
-        $oldCustomerPlan = (new CustomerPlan())->setPlan($oldPlan);
-
-        $connectionRepository = $this->createMock(CustomerConnectionRepository::class);
-        $connectionRepository
-            ->method('findOneByServiceIp')
-            ->willReturn($connection);
-
-        $customerPlanRepository = $this->createMock(CustomerPlanRepository::class);
-        $customerPlanRepository
-            ->method('findActiveOneByCustomerAndMikrotikRateKey')
-            ->willReturn(null);
-        $customerPlanRepository
-            ->method('findActiveImportedByCustomer')
-            ->willReturn([$oldCustomerPlan]);
-
-        $persistedCustomerPlans = [];
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager
-            ->method('persist')
-            ->willReturnCallback(function (object $entity) use (&$persistedCustomerPlans): void {
-                if ($entity instanceof CustomerPlan) {
-                    $persistedCustomerPlans[] = $entity;
-                }
-            });
-        $entityManager
-            ->method('wrapInTransaction')
-            ->willReturnCallback(static function (callable $work): void {
-                $work();
-            });
-
-        $result = $this->createImporter(
-            $connectionRepository,
-            $entityManager,
-            null,
-            [],
-            $customerPlanRepository
-        )->import(new MikrotikQueueReadResult(1, [$this->queue('10.10.9.67', false, '200/100')], 0));
-
-        self::assertSame(1, $result->customerPlansToCreate);
-        self::assertFalse($oldCustomerPlan->isActive());
-        self::assertCount(1, $persistedCustomerPlans);
+        self::assertSame(0, $result->ipAddressesToUpdate);
+        self::assertSame(1, $result->plansToUpdate);
+        self::assertSame(1, $result->macAddressesFound);
+        self::assertSame(0, $result->macAddressesToComplete);
+        self::assertSame(1, $result->macAddressesToUpdate);
+        self::assertSame($oldPlan, $customerPlan->getPlan());
+        self::assertTrue($customerPlan->isActive());
+        self::assertSame('11:22:33:44:55:66', $customerPlan->getMacAddress());
     }
 
     private function createImporter(
-        CustomerConnectionRepository $connectionRepository,
+        CustomerPlanRepository $customerPlanRepository,
         EntityManagerInterface $entityManager,
-        ?CustomerRepository $customerRepository = null,
         array $existingPlans = [],
-        ?CustomerPlanRepository $customerPlanRepository = null
+        ?CustomerRepository $customerRepository = null
     ): MikrotikCustomerImporter {
         if ($customerRepository === null) {
             $customerRepository = $this->createMock(CustomerRepository::class);
@@ -288,26 +214,31 @@ final class MikrotikCustomerImporterTest extends TestCase
                 ->willReturn(false);
         }
 
-        $planRepository = $this->createPlanRepository($existingPlans);
-        $customerPlanRepository ??= $this->createEmptyCustomerPlanRepository();
-
         return new MikrotikCustomerImporter(
-            $connectionRepository,
             $customerPlanRepository,
             new CustomerCodeGenerator($customerRepository),
-            new MikrotikPlanResolver($planRepository, $entityManager),
+            new MikrotikPlanResolver($this->createPlanRepository($existingPlans), $entityManager),
             $entityManager
         );
     }
 
-    private function createEmptyConnectionRepository(): CustomerConnectionRepository
-    {
-        $connectionRepository = $this->createMock(CustomerConnectionRepository::class);
-        $connectionRepository
+    private function createCustomerPlanRepository(
+        ?CustomerPlan $planByIp = null,
+        ?CustomerPlan $planByMac = null
+    ): CustomerPlanRepository {
+        $customerPlanRepository = $this->createMock(CustomerPlanRepository::class);
+        $customerPlanRepository
             ->method('findOneByServiceIp')
-            ->willReturn(null);
+            ->willReturnCallback(
+                static fn (string $serviceIp): ?CustomerPlan => $planByIp?->getServiceIp() === $serviceIp ? $planByIp : null
+            );
+        $customerPlanRepository
+            ->method('findOneByMacAddress')
+            ->willReturnCallback(
+                static fn (string $macAddress): ?CustomerPlan => $planByMac?->getMacAddress() === $macAddress ? $planByMac : null
+            );
 
-        return $connectionRepository;
+        return $customerPlanRepository;
     }
 
     /**
@@ -333,30 +264,24 @@ final class MikrotikCustomerImporterTest extends TestCase
         return $planRepository;
     }
 
-    private function createEmptyCustomerPlanRepository(): CustomerPlanRepository
-    {
-        $customerPlanRepository = $this->createMock(CustomerPlanRepository::class);
-        $customerPlanRepository
-            ->method('findActiveOneByCustomerAndMikrotikRateKey')
-            ->willReturn(null);
-        $customerPlanRepository
-            ->method('findActiveImportedByCustomer')
-            ->willReturn([]);
-
-        return $customerPlanRepository;
-    }
-
     /**
-     * @param Plan[] $persistedPlans
+     * @param Customer[] $persistedCustomers
+     * @param CustomerPlan[] $persistedCustomerPlans
      */
-    private function createEntityManagerCapturingPersistedPlans(array &$persistedPlans): EntityManagerInterface
-    {
+    private function createTransactionalEntityManager(
+        array &$persistedCustomers = [],
+        array &$persistedCustomerPlans = []
+    ): EntityManagerInterface {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager
             ->method('persist')
-            ->willReturnCallback(function (object $entity) use (&$persistedPlans): void {
-                if ($entity instanceof Plan) {
-                    $persistedPlans[] = $entity;
+            ->willReturnCallback(function (object $entity) use (&$persistedCustomers, &$persistedCustomerPlans): void {
+                if ($entity instanceof Customer) {
+                    $persistedCustomers[] = $entity;
+                }
+
+                if ($entity instanceof CustomerPlan) {
+                    $persistedCustomerPlans[] = $entity;
                 }
             });
         $entityManager
@@ -368,19 +293,38 @@ final class MikrotikCustomerImporterTest extends TestCase
         return $entityManager;
     }
 
-    private function createConnectionWithCustomer(): CustomerConnection
-    {
+    private function createCustomerPlanWithCustomer(
+        Plan $plan,
+        string $serviceIp,
+        ?string $macAddress = null
+    ): CustomerPlan {
         $customer = new Customer();
-        $connection = new CustomerConnection();
-        $connection->setCustomer($customer);
+        $customerPlan = new CustomerPlan();
+        $customerPlan->setPlan($plan);
+        $customerPlan->setServiceIp($serviceIp);
+        $customerPlan->setMacAddress($macAddress);
+        $customer->addCustomerPlan($customerPlan);
 
-        return $connection;
+        return $customerPlan;
     }
 
-    private function queue(string $serviceIp, bool $disabled = false, string $planKey = '100/50'): MikrotikQueue
+    private function createImportedPlan(string $mikrotikRateKey): Plan
     {
+        return (new Plan())
+            ->setName($mikrotikRateKey)
+            ->setMikrotikRateKey($mikrotikRateKey)
+            ->setMonthlyPrice('0.00')
+            ->setIsActive(true);
+    }
+
+    private function queue(
+        string $serviceIp,
+        bool $disabled = false,
+        string $planKey = '100/50',
+        ?string $macAddress = null
+    ): MikrotikQueue {
         [$downloadRate, $uploadRate] = explode('/', $planKey, 2);
 
-        return new MikrotikQueue($serviceIp, $disabled, $downloadRate, $uploadRate, $planKey);
+        return new MikrotikQueue($serviceIp, $disabled, $downloadRate, $uploadRate, $planKey, $macAddress);
     }
 }

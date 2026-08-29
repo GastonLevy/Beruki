@@ -3,10 +3,8 @@
 namespace App\Service\Mikrotik;
 
 use App\Entity\Customer;
-use App\Entity\CustomerConnection;
 use App\Entity\CustomerPlan;
 use App\Entity\Plan;
-use App\Repository\CustomerConnectionRepository;
 use App\Repository\CustomerPlanRepository;
 use App\Service\CustomerCodeGenerator;
 use App\Service\Mikrotik\Dto\MikrotikCustomerImportResult;
@@ -19,7 +17,6 @@ class MikrotikCustomerImporter
     private const BATCH_SIZE = 100;
 
     public function __construct(
-        private readonly CustomerConnectionRepository $customerConnectionRepository,
         private readonly CustomerPlanRepository $customerPlanRepository,
         private readonly CustomerCodeGenerator $customerCodeGenerator,
         private readonly MikrotikPlanResolver $planResolver,
@@ -33,6 +30,11 @@ class MikrotikCustomerImporter
         $existing = 0;
         $ambiguous = 0;
         $customerPlansToCreate = 0;
+        $ipAddressesToUpdate = 0;
+        $plansToUpdate = 0;
+        $macAddressesFound = 0;
+        $macAddressesToComplete = 0;
+        $macAddressesToUpdate = 0;
         $seenServiceIps = [];
         $operationCount = 0;
 
@@ -45,28 +47,66 @@ class MikrotikCustomerImporter
             &$existing,
             &$ambiguous,
             &$customerPlansToCreate,
+            &$ipAddressesToUpdate,
+            &$plansToUpdate,
+            &$macAddressesFound,
+            &$macAddressesToComplete,
+            &$macAddressesToUpdate,
             &$seenServiceIps,
             &$operationCount
         ): void {
             foreach ($queueReadResult->queues as $queue) {
+                if ($queue->macAddress !== null) {
+                    $macAddressesFound++;
+                }
+
                 if (isset($seenServiceIps[$queue->serviceIp])) {
                     $existing++;
                     continue;
                 }
 
                 $seenServiceIps[$queue->serviceIp] = true;
-                $connection = $this->customerConnectionRepository->findOneByServiceIp($queue->serviceIp);
+                $customerPlanByIp = $this->customerPlanRepository->findOneByServiceIp($queue->serviceIp);
+                $customerPlanByMac = $queue->macAddress !== null
+                    ? $this->customerPlanRepository->findOneByMacAddress($queue->macAddress)
+                    : null;
 
-                if ($connection instanceof CustomerConnection) {
+                if ($customerPlanByIp instanceof CustomerPlan
+                    && $customerPlanByMac instanceof CustomerPlan
+                    && $customerPlanByIp !== $customerPlanByMac
+                ) {
+                    $ambiguous++;
+                    continue;
+                }
+
+                $customerPlan = $customerPlanByIp ?? $customerPlanByMac;
+
+                if ($customerPlan instanceof CustomerPlan) {
                     $existing++;
 
-                    $customer = $connection->getCustomer();
+                    $customer = $customerPlan->getCustomer();
                     if (!$customer instanceof Customer) {
                         $ambiguous++;
                         continue;
                     }
 
-                    $customerPlansToCreate += $this->ensureCustomerPlan($customer, $queue, $dryRun);
+                    $plan = $this->planResolver->resolve($queue->planKey, $dryRun)->plan;
+
+                    if ($this->shouldUpdateServiceIp($customerPlan, $queue)) {
+                        $ipAddressesToUpdate++;
+                    }
+
+                    if ($this->shouldUpdatePlan($customerPlan, $plan)) {
+                        $plansToUpdate++;
+                    }
+
+                    if ($queue->macAddress !== null && $customerPlan->getMacAddress() === null) {
+                        $macAddressesToComplete++;
+                    } elseif ($queue->macAddress !== null && $customerPlan->getMacAddress() !== $queue->macAddress) {
+                        $macAddressesToUpdate++;
+                    }
+
+                    $this->syncCustomerPlan($customerPlan, $plan, $queue, $dryRun);
                     continue;
                 }
 
@@ -86,17 +126,10 @@ class MikrotikCustomerImporter
                 $customer->setMonthlyDebt(false);
                 $customer->setIsArchived(false);
 
-                $connection = new CustomerConnection();
-                $connection->setServiceIp($queue->serviceIp);
-                $connection->setMacAddress(null);
-                $connection->setIsActive($queue->isActive());
-
-                $customer->addCustomerConnection($connection);
-                $this->addCustomerPlan($customer, $plan);
+                $this->addCustomerPlan($customer, $plan, $queue);
 
                 $this->entityManager->persist($customer);
-                $this->entityManager->persist($connection);
-                $operationCount += 2;
+                $operationCount++;
 
                 if ($operationCount >= self::BATCH_SIZE) {
                     $this->entityManager->flush();
@@ -125,36 +158,55 @@ class MikrotikCustomerImporter
             $this->planResolver->getNewPlans(),
             $this->planResolver->getExistingPlans(),
             $customerPlansToCreate,
+            $ipAddressesToUpdate,
+            $plansToUpdate,
+            $macAddressesFound,
+            $macAddressesToComplete,
+            $macAddressesToUpdate,
             $dryRun
         );
     }
 
-    private function ensureCustomerPlan(Customer $customer, MikrotikQueue $queue, bool $dryRun): int
+    private function syncCustomerPlan(CustomerPlan $customerPlan, Plan $plan, MikrotikQueue $queue, bool $dryRun): void
     {
-        $plan = $this->planResolver->resolve($queue->planKey, $dryRun)->plan;
-
-        if ($this->customerPlanRepository->findActiveOneByCustomerAndMikrotikRateKey($customer, $queue->planKey) instanceof CustomerPlan) {
-            return 0;
-        }
-
         if ($dryRun) {
-            return 1;
+            return;
         }
 
-        foreach ($this->customerPlanRepository->findActiveImportedByCustomer($customer) as $activeImportedPlan) {
-            $activeImportedPlan->setIsActive(false);
+        if ($this->shouldUpdateServiceIp($customerPlan, $queue)) {
+            $customerPlan->setServiceIp($queue->serviceIp);
         }
 
-        $this->addCustomerPlan($customer, $plan);
+        if ($this->shouldUpdatePlan($customerPlan, $plan)) {
+            $customerPlan->setPlan($plan);
+        }
 
-        return 1;
+        if ($customerPlan->isActive() !== $queue->isActive()) {
+            $customerPlan->setIsActive($queue->isActive());
+        }
+
+        if ($queue->macAddress !== null && $customerPlan->getMacAddress() !== $queue->macAddress) {
+            $customerPlan->setMacAddress($queue->macAddress);
+        }
     }
 
-    private function addCustomerPlan(Customer $customer, Plan $plan): CustomerPlan
+    private function shouldUpdateServiceIp(CustomerPlan $customerPlan, MikrotikQueue $queue): bool
+    {
+        return $customerPlan->getServiceIp() !== $queue->serviceIp;
+    }
+
+    private function shouldUpdatePlan(CustomerPlan $customerPlan, Plan $plan): bool
+    {
+        return $customerPlan->getPlan() !== $plan;
+    }
+
+    private function addCustomerPlan(Customer $customer, Plan $plan, MikrotikQueue $queue): CustomerPlan
     {
         $customerPlan = new CustomerPlan();
         $customerPlan->setPlan($plan);
-        $customerPlan->setIsActive(true);
+        $customerPlan->setIsActive($queue->isActive());
+        $customerPlan->setServiceIp($queue->serviceIp);
+        $customerPlan->setMacAddress($queue->macAddress);
         $customer->addCustomerPlan($customerPlan);
 
         $this->entityManager->persist($customerPlan);

@@ -8,6 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: CustomerPlanRepository::class)]
 class CustomerPlan
 {
+    private const MAC_ADDRESS_PATTERN = '/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -26,6 +28,12 @@ class CustomerPlan
 
     #[ORM\Column]
     private ?bool $isActive = null;
+
+    #[ORM\Column(length: 45, nullable: true, unique: true)]
+    private ?string $serviceIp = null;
+
+    #[ORM\Column(length: 17, nullable: true)]
+    private ?string $macAddress = null;
 
     public function __construct()
     {
@@ -90,6 +98,43 @@ class CustomerPlan
     public function setIsActive(?bool $isActive): static
     {
         $this->isActive = $isActive ?? true;
+
+        return $this;
+    }
+
+    public function getServiceIp(): ?string
+    {
+        return $this->serviceIp;
+    }
+
+    public function setServiceIp(?string $serviceIp): static
+    {
+        $serviceIp = $serviceIp !== null ? trim($serviceIp) : null;
+        $this->serviceIp = $serviceIp === '' ? null : $serviceIp;
+
+        return $this;
+    }
+
+    public function getMacAddress(): ?string
+    {
+        return $this->macAddress;
+    }
+
+    public function setMacAddress(?string $macAddress): static
+    {
+        $macAddress = $macAddress !== null ? strtolower(str_replace('-', ':', trim($macAddress))) : null;
+
+        if ($macAddress === '') {
+            $this->macAddress = null;
+
+            return $this;
+        }
+
+        if ($macAddress !== null && !preg_match(self::MAC_ADDRESS_PATTERN, $macAddress)) {
+            throw new \InvalidArgumentException('MAC address must use the format aa:bb:cc:dd:ee:ff.');
+        }
+
+        $this->macAddress = $macAddress;
 
         return $this;
     }

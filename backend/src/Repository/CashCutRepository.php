@@ -48,4 +48,39 @@ class CashCutRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return CashCut[]
+     */
+    public function findClosedReportCashCuts(
+        ?\DateTimeImmutable $dateFrom = null,
+        ?\DateTimeImmutable $dateTo = null
+    ): array {
+        $queryBuilder = $this->createQueryBuilder('cashCut')
+            ->addSelect('user')
+            ->addSelect('payment')
+            ->addSelect('customer')
+            ->join('cashCut.user', 'user')
+            ->leftJoin('cashCut.customerPayments', 'payment')
+            ->leftJoin('payment.customer', 'customer')
+            ->andWhere('cashCut.closedAt IS NOT NULL')
+            ->orderBy('cashCut.closedAt', 'ASC')
+            ->addOrderBy('payment.paidAt', 'ASC');
+
+        if ($dateFrom !== null) {
+            $queryBuilder
+                ->andWhere('cashCut.closedAt >= :dateFrom')
+                ->setParameter('dateFrom', $dateFrom);
+        }
+
+        if ($dateTo !== null) {
+            $queryBuilder
+                ->andWhere('cashCut.closedAt <= :dateTo')
+                ->setParameter('dateTo', $dateTo);
+        }
+
+        return $queryBuilder
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -15,6 +15,7 @@ class MikrotikQueueReader
     public function readSimpleQueues(): MikrotikQueueReadResult
     {
         $rawQueues = $this->routerOsClient->fetchSimpleQueues();
+        $macAddressesByIp = $this->readMacAddressesByIp();
         $queues = [];
         $invalidQueues = 0;
 
@@ -32,7 +33,8 @@ class MikrotikQueueReader
                 $this->isDisabled($rawQueue['disabled'] ?? null),
                 $planData['downloadRate'],
                 $planData['uploadRate'],
-                $planData['planKey']
+                $planData['planKey'],
+                $macAddressesByIp[$serviceIp] ?? null
             );
         }
 
@@ -154,5 +156,45 @@ class MikrotikQueueReader
         }
 
         return in_array(strtolower(trim($disabled)), ['yes', 'true', '1'], true);
+    }
+
+    public function normalizeMacAddress(mixed $macAddress): ?string
+    {
+        if (!is_string($macAddress)) {
+            return null;
+        }
+
+        $macAddress = strtolower(str_replace('-', ':', trim($macAddress)));
+
+        if ($macAddress === '') {
+            return null;
+        }
+
+        if (!preg_match('/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/', $macAddress)) {
+            return null;
+        }
+
+        return $macAddress;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function readMacAddressesByIp(): array
+    {
+        $macAddressesByIp = [];
+
+        foreach ($this->routerOsClient->fetchArpEntries() as $rawArpEntry) {
+            $ip = $this->normalizeTarget($rawArpEntry['address'] ?? null);
+            $macAddress = $this->normalizeMacAddress($rawArpEntry['mac-address'] ?? null);
+
+            if ($ip === null || $macAddress === null) {
+                continue;
+            }
+
+            $macAddressesByIp[$ip] = $macAddress;
+        }
+
+        return $macAddressesByIp;
     }
 }

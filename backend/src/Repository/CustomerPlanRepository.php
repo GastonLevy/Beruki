@@ -31,6 +31,16 @@ class CustomerPlanRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findOneByServiceIp(string $serviceIp): ?CustomerPlan
+    {
+        return $this->findOneBy(['serviceIp' => $serviceIp]);
+    }
+
+    public function findOneByMacAddress(string $macAddress): ?CustomerPlan
+    {
+        return $this->findOneBy(['macAddress' => $macAddress]);
+    }
+
     /**
      * @return CustomerPlan[]
      */

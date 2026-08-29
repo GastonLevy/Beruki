@@ -14,6 +14,11 @@ final readonly class MikrotikCustomerImportResult
         public int $newPlans,
         public int $existingPlans,
         public int $customerPlansToCreate,
+        public int $ipAddressesToUpdate,
+        public int $plansToUpdate,
+        public int $macAddressesFound,
+        public int $macAddressesToComplete,
+        public int $macAddressesToUpdate,
         public bool $dryRun,
     ) {
     }
