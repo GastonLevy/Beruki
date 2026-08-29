@@ -20,23 +20,23 @@ export class CustomerDetail {
 
   private refreshCustomer$ = new BehaviorSubject<void>(undefined);
 
-  private customerId: number;
+  private customerCode: string;
 
   constructor(
     private route: ActivatedRoute,
     private customerService: Customer
   ) {
-    this.customerId = Number(this.route.snapshot.paramMap.get('id'));
+    this.customerCode = this.route.snapshot.paramMap.get('customerCode') ?? '';
 
     this.customer$ = this.refreshCustomer$.pipe(
       switchMap(() => {
-        return this.customerService.getById(this.customerId);
+        return this.customerService.getByCode(this.customerCode);
       })
     );
   }
 
   payMonthlyFee(): void {
-    this.customerService.payMonthlyFee(this.customerId).subscribe({
+    this.customerService.payMonthlyFee(this.customerCode).subscribe({
       next: () => {
         this.refreshCustomer$.next();
       },

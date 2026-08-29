@@ -33,6 +33,7 @@ class CustomerRepository extends ServiceEntityRepository
                     c.fullName LIKE :search
                     OR c.email LIKE :search
                     OR c.subscriberNumber LIKE :search
+                    OR c.customerCode LIKE :search
                 ')
                 ->setParameter(
                     'search',
@@ -69,10 +70,66 @@ class CustomerRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    public function findActiveByCustomerCode(string $customerCode): ?Customer
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.customerCode = :customerCode')
+            ->andWhere('c.isArchived = :isArchived')
+            ->setParameter('customerCode', $customerCode)
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOneByCustomerCode(string $customerCode): ?Customer
+    {
+        return $this->findOneBy(['customerCode' => $customerCode]);
+    }
+
+    public function existsByCustomerCode(string $customerCode): bool
+    {
+        return $this->findOneByCustomerCode($customerCode) instanceof Customer;
+    }
+
     public function findActiveOneBy(array $criteria): ?Customer
     {
         $criteria['isArchived'] = false;
 
         return $this->findOneBy($criteria);
+    }
+
+    public function countActive(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.isArchived = :isArchived')
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countActiveWithMonthlyDebt(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.isArchived = :isArchived')
+            ->andWhere('c.monthlyDebt = :monthlyDebt')
+            ->setParameter('isArchived', false)
+            ->setParameter('monthlyDebt', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function activateMonthlyDebtForActiveWithoutDebt(): int
+    {
+        return $this->createQueryBuilder('c')
+            ->update()
+            ->set('c.monthlyDebt', ':monthlyDebt')
+            ->andWhere('c.isArchived = :isArchived')
+            ->andWhere('(c.monthlyDebt != :monthlyDebt OR c.monthlyDebt IS NULL)')
+            ->setParameter('monthlyDebt', true)
+            ->setParameter('isArchived', false)
+            ->getQuery()
+            ->execute();
     }
 }

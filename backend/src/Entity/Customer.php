@@ -10,12 +10,17 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: CustomerRepository::class)]
 class Customer
 {
+    private const CUSTOMER_CODE_PATTERN = '/^\d[a-z]\d[a-z]\d[a-z]\d[a-z]$/';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 8, unique: true)]
+    private ?string $customerCode = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $fullName = null;
 
     #[ORM\Column(length: 100, nullable: true)]
@@ -66,12 +71,32 @@ class Customer
         return $this->id;
     }
 
+    public function getCustomerCode(): ?string
+    {
+        return $this->customerCode;
+    }
+
+    public function assignCustomerCode(string $customerCode): static
+    {
+        if (!preg_match(self::CUSTOMER_CODE_PATTERN, $customerCode)) {
+            throw new \InvalidArgumentException('Customer code must match the expected public format.');
+        }
+
+        if ($this->customerCode !== null && $this->customerCode !== $customerCode) {
+            throw new \LogicException('Customer code cannot be changed after it is assigned.');
+        }
+
+        $this->customerCode = $customerCode;
+
+        return $this;
+    }
+
     public function getFullName(): ?string
     {
         return $this->fullName;
     }
 
-    public function setFullName(string $fullName): static
+    public function setFullName(?string $fullName): static
     {
         $this->fullName = $fullName;
 

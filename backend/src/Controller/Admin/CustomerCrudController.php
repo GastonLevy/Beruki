@@ -4,6 +4,8 @@ namespace App\Controller\Admin;
 
 use App\Entity\Customer;
 use App\Form\CustomerPlanType;
+use App\Service\CustomerCodeGenerator;
+use App\Service\MonthlyDebtGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
@@ -24,12 +26,14 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\MoneyField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class CustomerCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly RequestStack $requestStack,
+        private readonly CustomerCodeGenerator $customerCodeGenerator,
     ) {
     }
 
@@ -48,7 +52,8 @@ class CustomerCrudController extends AbstractCrudController
             ->setPageTitle(Crud::PAGE_INDEX, $showArchived ? 'Clientes archivados' : 'Clientes')
             ->setPageTitle(Crud::PAGE_NEW, 'Crear cliente')
             ->setPageTitle(Crud::PAGE_EDIT, 'Editar cliente')
-            ->setPageTitle(Crud::PAGE_DETAIL, 'Detalle del cliente');
+            ->setPageTitle(Crud::PAGE_DETAIL, 'Detalle del cliente')
+            ->overrideTemplate('crud/index', 'admin/customer/index.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -75,6 +80,16 @@ class CustomerCrudController extends AbstractCrudController
             ->displayIf(static fn (Customer $customer): bool => $customer->isArchived())
             ->setIcon('fa fa-rotate-left');
 
+        $generateMonthlyDebt = Action::new('generateMonthlyDebtModal', 'Generar deuda mensual')
+            ->createAsGlobalAction()
+            ->linkToUrl('#')
+            ->setIcon('fa fa-calendar-plus')
+            ->addCssClass('btn btn-primary')
+            ->setHtmlAttributes([
+                'data-bs-toggle' => 'modal',
+                'data-bs-target' => '#monthly-debt-generation-modal',
+            ]);
+
         $actions = $actions
             ->update(
                 Crud::PAGE_INDEX,
@@ -100,9 +115,41 @@ class CustomerCrudController extends AbstractCrudController
         }
 
         return $actions
+            ->add(Crud::PAGE_INDEX, $generateMonthlyDebt)
             ->add(Crud::PAGE_INDEX, $viewArchived)
             ->add(Crud::PAGE_INDEX, $archive)
             ->add(Crud::PAGE_DETAIL, $archive);
+    }
+
+    #[AdminRoute(
+        path: '/generate-monthly-debt',
+        name: 'generate_monthly_debt',
+        options: ['methods' => ['POST']]
+    )]
+    #[IsGranted('ROLE_ADMIN')]
+    public function generateMonthlyDebt(MonthlyDebtGenerator $monthlyDebtGenerator): RedirectResponse
+    {
+        try {
+            $result = $monthlyDebtGenerator->generate(
+                $this->getUser()?->getUserIdentifier() ?? 'unknown'
+            );
+
+            $this->addFlash(
+                'success',
+                sprintf(
+                    'Deuda mensual generada correctamente para %d clientes. %d ya estaban marcados como pendientes.',
+                    $result['activated'],
+                    $result['alreadyInDebt']
+                )
+            );
+        } catch (\Throwable) {
+            $this->addFlash(
+                'danger',
+                'No se pudo generar la deuda mensual. Intenta nuevamente.'
+            );
+        }
+
+        return $this->redirectToRoute('admin_customer_index');
     }
 
     #[AdminRoute(path: '/archive-customer', name: 'archive_customer')]
@@ -160,13 +207,26 @@ class CustomerCrudController extends AbstractCrudController
         return $queryBuilder;
     }
 
+    public function persistEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        if ($entityInstance instanceof Customer && $entityInstance->getCustomerCode() === null) {
+            $entityInstance->assignCustomerCode($this->customerCodeGenerator->generateUnique());
+        }
+
+        parent::persistEntity($entityManager, $entityInstance);
+    }
+
     public function configureFields(string $pageName): iterable
     {
         return [
             IdField::new('id')
                 ->hideOnForm(),
 
-            TextField::new('fullName', 'Nombre'),
+            TextField::new('customerCode', 'Codigo publico')
+                ->hideOnForm(),
+
+            TextField::new('fullName', 'Nombre')
+                ->setRequired(false),
 
             TextField::new('subscriberNumber', 'Número de abonado'),
 

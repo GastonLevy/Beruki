@@ -23,6 +23,13 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        admin_session_bridge:
+            pattern: ^/api/admin/(session-bridge|logout-session)$
+            provider: app_user_provider
+            stateless: false
+            jwt: ~
+            context: main
+
         api:
             pattern: ^/api
             stateless: true
@@ -40,6 +47,8 @@ security:
 
     access_control:
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/admin/session-bridge$, roles: ROLE_ADMIN }
+        - { path: ^/api/admin/logout-session$, roles: ROLE_USER }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/admin/login, roles: PUBLIC_ACCESS }
         - { path: ^/admin, roles: ROLE_ADMIN }

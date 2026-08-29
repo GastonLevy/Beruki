@@ -14,12 +14,12 @@ export class Customer {
     );
   }
 
-  getById(id: number) {
-    return this.api.get(`/customers/${id}`);
+  getByCode(customerCode: string) {
+    return this.api.get(`/customers/${customerCode}`);
   }
 
-  payMonthlyFee(id: number) {
-    return this.api.post(`/customers/${id}/payments`, {});
+  payMonthlyFee(customerCode: string) {
+    return this.api.post(`/customers/${customerCode}/payments`, {});
   }
 
 }

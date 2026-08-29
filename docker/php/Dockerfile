@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     libzip-dev \
     libicu-dev \
-    && docker-php-ext-install zip pdo_mysql intl \
+    && docker-php-ext-install zip pdo_mysql intl sockets \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
