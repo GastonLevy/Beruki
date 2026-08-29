@@ -11,21 +11,48 @@ export class Navbar {
 
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  isOpeningAdmin = false;
 
   isAdmin(): boolean {
     return this.auth.isAdmin();
   }
 
   goToAdmin(): void {
-    window.location.href = '/admin';
+    if (this.isOpeningAdmin) {
+      return;
+    }
+
+    this.isOpeningAdmin = true;
+
+    this.auth.createAdminSession().subscribe({
+      next: () => {
+        this.navigateToAdmin();
+      },
+      error: () => {
+        this.isOpeningAdmin = false;
+      }
+    });
   }
 
   logout(): void {
+    this.auth.logoutAdminSession().subscribe({
+      next: () => {
+        this.finishLogout();
+      },
+      error: () => {
+        this.finishLogout();
+      }
+    });
+  }
 
+  private finishLogout(): void {
     this.auth.logout();
 
     this.router.navigate(['/login']);
+  }
 
+  protected navigateToAdmin(): void {
+    window.location.href = '/admin';
   }
 
 }

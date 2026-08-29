@@ -15,6 +15,18 @@ export class Auth {
     });
   }
 
+  createAdminSession() {
+    return this.api.post('/admin/session-bridge', {}, {
+      withCredentials: true
+    });
+  }
+
+  logoutAdminSession() {
+    return this.api.post('/admin/logout-session', {}, {
+      withCredentials: true
+    });
+  }
+
   setToken(token: string): void {
     localStorage.setItem('token', token);
   }
