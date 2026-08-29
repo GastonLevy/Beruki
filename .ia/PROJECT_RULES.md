@@ -32,6 +32,13 @@ Before implementing a future task, read this file and follow these rules unless 
 - `CustomerPlan` represents commercial plan assignment.
 - `CustomerConnection` represents technical network connection data.
 
+## Plan
+
+- `Plan.name` is visible commercial text and may be edited by administrators.
+- `Plan.mikrotikRateKey` is the stable technical identity for MikroTik-imported speeds.
+- MikroTik plan resolution must use `mikrotikRateKey`, not the editable visible name.
+- Store MikroTik speed keys as Beruki `download/upload`, for example `100/50`.
+
 ## Future MikroTik Integration
 
 - The first MikroTik integration is read-only from the router perspective.
@@ -41,10 +48,18 @@ Before implementing a future task, read this file and follow these rules unless 
 - Do not store `queue.name` as `fullName`.
 - In the initial import, set `fullName = null`.
 - Use `queue.target` for `CustomerConnection.serviceIp`, removing `/32`.
+- RouterOS `max-limit` is `upload/download`; Beruki plan keys and names are `download/upload`.
+- Ignore queues with unsafe or unparseable `max-limit` values.
+- Imported plans start active with `monthlyPrice = "0.00"` and `description = null`.
+- Do not store `queue.name` as plan identity.
 - Avoid duplicates by looking up `CustomerConnection` by `serviceIp`.
+- Avoid duplicate imported plans by resolving through `Plan.mikrotikRateKey`.
+- Avoid duplicate customer-plan assignments before creating a `CustomerPlan`.
 - Network integrations must work through connections and not assume one IP per customer.
 - Read MikroTik credentials from configuration or environment variables.
 - Do not hardcode IP, username, password, or ports.
+- Use a dedicated read-only RouterOS user in production.
+- Prefer `app:mikrotik:import-customers --dry-run` before real imports.
 - Importers must be idempotent.
 - Future sync must not modify MikroTik unless explicitly requested.
 

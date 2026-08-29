@@ -19,6 +19,9 @@ class Plan
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    #[ORM\Column(length: 50, nullable: true, unique: true)]
+    private ?string $mikrotikRateKey = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
@@ -57,6 +60,18 @@ class Plan
     public function setName(string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function getMikrotikRateKey(): ?string
+    {
+        return $this->mikrotikRateKey;
+    }
+
+    public function setMikrotikRateKey(?string $mikrotikRateKey): static
+    {
+        $this->mikrotikRateKey = $mikrotikRateKey;
 
         return $this;
     }

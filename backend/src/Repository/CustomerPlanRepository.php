@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Customer;
 use App\Entity\CustomerPlan;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,28 +17,32 @@ class CustomerPlanRepository extends ServiceEntityRepository
         parent::__construct($registry, CustomerPlan::class);
     }
 
-    //    /**
-    //     * @return CustomerPlan[] Returns an array of CustomerPlan objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findActiveOneByCustomerAndMikrotikRateKey(Customer $customer, string $mikrotikRateKey): ?CustomerPlan
+    {
+        return $this->createQueryBuilder('cp')
+            ->innerJoin('cp.plan', 'p')
+            ->andWhere('cp.customer = :customer')
+            ->andWhere('cp.isActive = true')
+            ->andWhere('p.mikrotikRateKey = :mikrotikRateKey')
+            ->setParameter('customer', $customer)
+            ->setParameter('mikrotikRateKey', $mikrotikRateKey)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 
-    //    public function findOneBySomeField($value): ?CustomerPlan
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * @return CustomerPlan[]
+     */
+    public function findActiveImportedByCustomer(Customer $customer): array
+    {
+        return $this->createQueryBuilder('cp')
+            ->innerJoin('cp.plan', 'p')
+            ->andWhere('cp.customer = :customer')
+            ->andWhere('cp.isActive = true')
+            ->andWhere('p.mikrotikRateKey IS NOT NULL')
+            ->setParameter('customer', $customer)
+            ->getQuery()
+            ->getResult();
+    }
 }
