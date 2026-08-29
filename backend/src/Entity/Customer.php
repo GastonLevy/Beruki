@@ -55,22 +55,10 @@ class Customer
     )]
     private Collection $customerPayments;
 
-    /**
-     * @var Collection<int, CustomerConnection>
-     */
-    #[ORM\OneToMany(
-        targetEntity: CustomerConnection::class,
-        mappedBy: 'customer',
-        cascade: ['persist'],
-        orphanRemoval: true
-    )]
-    private Collection $customerConnections;
-
     public function __construct()
     {
         $this->customerPlans = new ArrayCollection();
         $this->customerPayments = new ArrayCollection();
-        $this->customerConnections = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -200,40 +188,10 @@ class Customer
         return $this->customerPayments;
     }
 
-    /**
-     * @return Collection<int, CustomerConnection>
-     */
-    public function getCustomerConnections(): Collection
-    {
-        return $this->customerConnections;
-    }
-
-    public function addCustomerConnection(CustomerConnection $customerConnection): static
-    {
-        if (!$this->customerConnections->contains($customerConnection)) {
-            $this->customerConnections->add($customerConnection);
-            $customerConnection->setCustomer($this);
-        }
-
-        return $this;
-    }
-
-    public function removeCustomerConnection(CustomerConnection $customerConnection): static
-    {
-        if ($this->customerConnections->removeElement($customerConnection)) {
-            if ($customerConnection->getCustomer() === $this) {
-                $customerConnection->setCustomer(null);
-            }
-        }
-
-        return $this;
-    }
-
     public function hasRelations(): bool
     {
         return !$this->customerPlans->isEmpty()
-            || !$this->customerPayments->isEmpty()
-            || !$this->customerConnections->isEmpty();
+            || !$this->customerPayments->isEmpty();
     }
 
     public function getMonthlyAmount(): string

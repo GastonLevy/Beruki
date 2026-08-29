@@ -10,6 +10,7 @@ final readonly class MikrotikQueue
         public string $downloadRate,
         public string $uploadRate,
         public string $planKey,
+        public ?string $macAddress = null,
     ) {
     }
 

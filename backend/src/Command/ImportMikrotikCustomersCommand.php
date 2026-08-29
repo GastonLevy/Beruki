@@ -30,7 +30,7 @@ class ImportMikrotikCustomersCommand extends Command
             'dry-run',
             null,
             InputOption::VALUE_NONE,
-            'Read and calculate import results without persisting customers or connections.'
+            'Read and calculate import results without persisting customers or assigned plans.'
         );
     }
 
@@ -52,9 +52,9 @@ class ImportMikrotikCustomersCommand extends Command
         $io->listing([
             sprintf('Queues read: %d', $result->queuesRead),
             sprintf('New customers: %d', $result->created),
-            sprintf('Existing connections: %d', $result->existing),
+            sprintf('Existing assigned plans: %d', $result->existing),
             sprintf('Invalid queues: %d', $result->invalid),
-            sprintf('Ambiguous connections: %d', $result->ambiguous),
+            sprintf('Ambiguous assigned plans: %d', $result->ambiguous),
             sprintf('Plans discovered: %d', $result->plansDiscovered),
             sprintf('New plans: %d', $result->newPlans),
             sprintf('Existing plans: %d', $result->existingPlans),
@@ -62,7 +62,15 @@ class ImportMikrotikCustomersCommand extends Command
         ]);
 
         if ($dryRun) {
-            $io->note('Dry-run completed without persisting Customers, CustomerConnections, Plans or CustomerPlans.');
+            $io->section('Dry-run synchronization');
+            $io->listing([
+                sprintf('IP addresses to update: %d', $result->ipAddressesToUpdate),
+                sprintf('Plans to update: %d', $result->plansToUpdate),
+                sprintf('MAC addresses found: %d', $result->macAddressesFound),
+                sprintf('MAC addresses to complete: %d', $result->macAddressesToComplete),
+                sprintf('MAC addresses to update: %d', $result->macAddressesToUpdate),
+            ]);
+            $io->note('Dry-run completed without persisting Customers, Plans or CustomerPlans.');
         }
 
         return Command::SUCCESS;

@@ -44,6 +44,14 @@ final class MikrotikQueueReaderTest extends TestCase
                     'name' => 'also-ignored',
                 ],
             ]);
+        $routerOsClient
+            ->method('fetchArpEntries')
+            ->willReturn([
+                [
+                    'address' => '10.10.9.67',
+                    'mac-address' => 'AA-BB-CC-DD-EE-FF',
+                ],
+            ]);
 
         $result = (new MikrotikQueueReader($routerOsClient))->readSimpleQueues();
 
@@ -55,6 +63,57 @@ final class MikrotikQueueReaderTest extends TestCase
         self::assertSame('100', $result->queues[0]->downloadRate);
         self::assertSame('50', $result->queues[0]->uploadRate);
         self::assertSame('100/50', $result->queues[0]->planKey);
+        self::assertSame('aa:bb:cc:dd:ee:ff', $result->queues[0]->macAddress);
+    }
+
+    public function testArpEntriesWithoutMacDoNotBlockQueueImport(): void
+    {
+        $routerOsClient = $this->createMock(RouterOsClient::class);
+        $routerOsClient
+            ->method('fetchSimpleQueues')
+            ->willReturn([
+                [
+                    'target' => '10.10.9.67/32',
+                    'max-limit' => '50M/100M',
+                    'disabled' => 'no',
+                ],
+                [
+                    'target' => '10.10.9.68/32',
+                    'max-limit' => '50M/100M',
+                    'disabled' => 'no',
+                ],
+            ]);
+        $routerOsClient
+            ->method('fetchArpEntries')
+            ->willReturn([
+                [
+                    'address' => '10.10.9.67',
+                ],
+                [
+                    'address' => '10.10.9.68',
+                    'mac-address' => 'not-a-mac',
+                ],
+                [
+                    'mac-address' => 'aa:bb:cc:dd:ee:ff',
+                ],
+            ]);
+
+        $result = (new MikrotikQueueReader($routerOsClient))->readSimpleQueues();
+
+        self::assertCount(2, $result->queues);
+        self::assertNull($result->queues[0]->macAddress);
+        self::assertNull($result->queues[1]->macAddress);
+    }
+
+    public function testNormalizesMacAddress(): void
+    {
+        $reader = new MikrotikQueueReader($this->createMock(RouterOsClient::class));
+
+        self::assertSame('aa:bb:cc:dd:ee:ff', $reader->normalizeMacAddress('AA-BB-CC-DD-EE-FF'));
+        self::assertSame('aa:bb:cc:dd:ee:ff', $reader->normalizeMacAddress(' aa:bb:cc:dd:ee:ff '));
+        self::assertNull($reader->normalizeMacAddress('not-a-mac'));
+        self::assertNull($reader->normalizeMacAddress(''));
+        self::assertNull($reader->normalizeMacAddress(null));
     }
 
     public function testNormalizesMaxLimitFromRouterOsUploadDownloadToBerukiDownloadUpload(): void

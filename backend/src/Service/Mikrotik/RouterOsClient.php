@@ -12,16 +12,7 @@ class RouterOsClient
      */
     public function fetchSimpleQueues(): array
     {
-        $client = new Client([
-            'host' => $this->requiredEnv('MIKROTIK_HOST'),
-            'port' => (int) $this->env('MIKROTIK_PORT', '8728'),
-            'user' => $this->requiredEnv('MIKROTIK_USER'),
-            'pass' => $this->requiredEnv('MIKROTIK_PASSWORD'),
-            'timeout' => (int) $this->env('MIKROTIK_TIMEOUT', '10'),
-            'socket_timeout' => (int) $this->env('MIKROTIK_SOCKET_TIMEOUT', '30'),
-            'attempts' => (int) $this->env('MIKROTIK_ATTEMPTS', '3'),
-            'delay' => (int) $this->env('MIKROTIK_RETRY_DELAY', '1'),
-        ]);
+        $client = new Client($this->connectionConfig());
 
         $response = $client->query(new Query('/queue/simple/print'))->read();
 
@@ -30,6 +21,39 @@ class RouterOsClient
         }
 
         return $response;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function fetchArpEntries(): array
+    {
+        $client = new Client($this->connectionConfig());
+
+        $response = $client->query(new Query('/ip/arp/print'))->read();
+
+        if (!is_array($response)) {
+            throw new \RuntimeException('RouterOS returned an unexpected response for ARP entries.');
+        }
+
+        return $response;
+    }
+
+    /**
+     * @return array{host: string, port: int, user: string, pass: string, timeout: int, socket_timeout: int, attempts: int, delay: int}
+     */
+    private function connectionConfig(): array
+    {
+        return [
+            'host' => $this->requiredEnv('MIKROTIK_HOST'),
+            'port' => (int) $this->env('MIKROTIK_PORT', '8728'),
+            'user' => $this->requiredEnv('MIKROTIK_USER'),
+            'pass' => $this->requiredEnv('MIKROTIK_PASSWORD'),
+            'timeout' => (int) $this->env('MIKROTIK_TIMEOUT', '10'),
+            'socket_timeout' => (int) $this->env('MIKROTIK_SOCKET_TIMEOUT', '30'),
+            'attempts' => (int) $this->env('MIKROTIK_ATTEMPTS', '3'),
+            'delay' => (int) $this->env('MIKROTIK_RETRY_DELAY', '1'),
+        ];
     }
 
     private function requiredEnv(string $name): string
